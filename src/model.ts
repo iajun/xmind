@@ -33,8 +33,6 @@ const traverse = <T extends { children: T[] }>(
 class Model {
   public sourceData: Node[];
   private tree?: ModelNode;
-  private nodeIdMap: Record<string, ModelNode>;
-  private nodeList: ModelNode[];
 
   constructor(data: Node[]) {
     this.sourceData = data;
@@ -43,13 +41,6 @@ class Model {
 
   private init(list: Node[]) {
     this.tree = this.genTree(list);
-    // this.nodeIdMap = this.genIdMap(this.tree);
-  }
-
-  private genIdMap(tree: ModelNode) {
-    traverse([tree], (item) => {
-      item.children = [];
-    });
   }
 
   private genKey(parentNode: Node | null, childId: string) {
@@ -101,10 +92,6 @@ class Model {
   get data() {
     return this.tree;
   }
-
-  public deleteNode(id: string) {}
-  public removeNode(id: string) {}
-  public addNode(label: string, targetNodeId: string) {}
 }
 
 export default Model;
