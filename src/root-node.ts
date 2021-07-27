@@ -1,17 +1,26 @@
 import G6 from '@antv/g6'
+import { fittingLabelHeight, fittingLabelWidth, fittingString } from "./utils";
+import config from "./config";
 
-const options = {
-  size: [120, 40]
-}
+const options = config.rootNode
 
 const RootNode = {
-  options ,
-  jsx() {
-    const [width, height] = options.size;
+  options,
+  jsx(cfg) {
+    const { fontSize, maxWidth, padding, lineHeight } = options;
+    const label = fittingString(
+      cfg.label,
+      maxWidth,
+      fontSize,
+    );
+    const width = fittingLabelWidth(label, fontSize, padding[1]);
+    const height = fittingLabelHeight(label, lineHeight, padding[0]);
+    
     return `
-    <group>
-
-    <rect style={{
+    <group name='rootNode'>
+    <rect
+    keyshape='true'
+    style={{
       x: 0,
       y: 0,
       width: ${width}, 
@@ -19,26 +28,27 @@ const RootNode = {
       fill: '#587EF7',
       radius: 8
     }}>
-
     <text style={{
       marginLeft: ${width / 2},
-      marginTop: ${height / 2 - 8},
+      marginTop: ${height / 2 - lineHeight},
+      lineHeight: ${lineHeight},
+      textBaseline: 'middle',
       fill: '#fff',
       textAlign: 'center',
-      fontSize: 16
-    }}>hello</text>
+      fontSize: ${fontSize}
+    }}>${label}</text>
     </rect> 
-
     </group>
-
-    `
+    `;
   },
   getAnchorPoints() {
     return [
-      [0, 0.8],
-      [1, 0.8],
+      [0, 0.5],
+      [1, 0.5],
     ];
   },
-}
+};
 
-G6.registerNode("root", RootNode);
+G6.registerNode("rootNode", RootNode);
+
+export default RootNode;

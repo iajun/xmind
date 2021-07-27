@@ -1,71 +1,77 @@
-import Model from "./model";
+import { ItemState } from "./constants";
+import Model, { ModelNode } from "./model";
 import "./style.css";
 import G6 from "@antv/g6";
 import list from "./data";
-import './root-node'
-import './sub-node'
+import "./root-node";
+import "./sub-node";
+import './xmind-node'
+import config from "./config";
+import { executeBatch, fittingLabelHeight, fittingLabelWidth, fittingString } from "./utils";
 
 const model = new Model(list);
-// const controller = new Controller(list)
-
-const { Util } = G6;
 
 const tree = new G6.TreeGraph({
   container: "xmind",
-  width: 800,
+  width: 1600,
   height: 800,
-  fitView: true,
   fitViewPadding: [10, 20],
   layout: {
     type: "mindmap",
     direction: "H",
-    getHeight: () => {
-      return 16;
+    getWidth: (node: ModelNode) => {
+      const nodeConfig = config[node.type];
+      return fittingLabelWidth(
+        node.label,
+        nodeConfig.fontSize,
+        nodeConfig.padding[1]
+      );
     },
-    getWidth: (node) => {
-      return node.level === 0
-        ? Util.getTextSize(node.label, 16)[0] + 12
-        : Util.getTextSize(node.label, 12)[0];
-    },
-    getVGap: () => {
-      return 10;
-    },
-    getHGap: () => {
-      return 60;
+    getHeight: (node: ModelNode) => {
+      const nodeConfig = config[node.type];
+      
+      return fittingLabelHeight(
+        fittingString(node.label, nodeConfig.maxWidth, nodeConfig.fontSize),
+        nodeConfig.lineHeight,
+        nodeConfig.padding[0]
+      );
     },
     getSide: () => {
-      return 'right'
+      return "right";
     },
   },
   defaultEdge: {
     type: "cubic-horizontal",
     style: {
-      lineWidth: 1,
-      stroke: '#959EA6'
+      lineWidth: config.global.lineWidth,
+      stroke: config.global.stroke,
     },
   },
-  minZoom: 0.5,
   modes: {
-    default: ["drag-canvas", "zoom-canvas", "dice-mindmap",  {
-      type: 'collapse-expand',
-      trigger: 'click',
-    }, {
-      type: 'drag-node',
-      enableDelegate: true
-    }],
+    default: [
+      {
+        type: "scroll-canvas",
+        scalableRange: 0
+      },
+      {
+        type: "drag-node",
+        enableDelegate: true,
+      },
+    ],
   },
-  nodeStateStyles: {
-  },
-  edgeStateStyles: {
-    moving: {
-      stroke: '#959EA6'
-    }
-  }
 });
 
-tree.on('node:mouseenter', (evt) => {
+tree.on("node:click", (evt) => {
   const { item } = evt;
-  console.log(item?.getContainer())
+  if (!item) return;
+  const selectedNodes = tree.findAllByState("node", ItemState.Selected);
+  const isSelected = item.hasState(ItemState.Selected);
+  executeBatch(tree, () => {
+    selectedNodes.forEach((item) => {
+      tree.setItemState(item, ItemState.Selected, false);
+    });
+  });
+  tree.setItemState(item, ItemState.Selected, !isSelected);
 });
 tree.data(model.data);
 

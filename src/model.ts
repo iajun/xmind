@@ -4,7 +4,7 @@ import _ from "lodash";
 const NO_ID = "__NO_ID__";
 const CONCAT_ID_KEY = "$$";
 
-type ModelNode = Node & {
+export type ModelNode = Node & {
   type: NodeType;
   children: Node[];
   level: number;
@@ -72,10 +72,10 @@ class Model {
           node.children = genChildren(node, null, level + 1);
           node.type =
             key === this.rootKey
-              ? "root"
+              ? "rootNode"
               : node.children.length
-              ? "sub"
-              : "leaf";
+              ? "xmindNode"
+              : "xmindNode";
           node.level = level;
           children.push(node as ModelNode);
           node = map[this.genKey(parentNode, node.id)];

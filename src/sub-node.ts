@@ -1,53 +1,103 @@
 import G6 from '@antv/g6'
+import config from './config';
+import { NodeName } from './constants';
+import { fittingLabelHeight, fittingLabelWidth, fittingString } from './utils';
 
 const options = {
-  size: [120, 30],
-  fontSize: [0, 0, 14, 10]
+  stateStyles: {
+    selected: {
+      stroke: "#50B6F0",
+      lineWidth: config.global.lineWidth
+    },
+  },
 }
 
+const FOLD_BUTTON_RADIUS = 4
 
-const RootNode = {
+
+// <group style={{
+//   opacity: 0
+// }}> 
+// <circle
+// style={{
+//   fill: '#fff',
+//   marginLeft: ${width},
+//   r: ${FOLD_BUTTON_RADIUS},
+//   stroke: '#959EA6'
+// }}
+// >
+
+// </circle>
+// <path style={{
+//   stroke: '#959EA6',
+//   path: [
+//     ['M', ${width - FOLD_BUTTON_RADIUS * 0.6}, ${height + 4}],
+//     ['L', ${width + FOLD_BUTTON_RADIUS * 0.6}, ${height + 4}]
+//   ],
+// }} />
+// </group>
+
+
+const SubNode = {
   options ,
   jsx(cfg) {
-    const [width, height] = options.size;
+    const { fontSize, maxWidth, padding, lineHeight } = config.subNode;
+    const label = fittingString(
+      cfg.label,
+      maxWidth,
+      fontSize,
+    );
+    const width = fittingLabelWidth(label, fontSize, padding[1]);
+    const height = fittingLabelHeight(label, lineHeight, padding[0]);
+
     return `
-    <group>
-    <rect style={{
-      fill: '#959EA6',
-      x: ${width / 2},
-      y: ${height / 2},
-      strokeWidth: 2,
-      stroke: '#959EA6',
-      width: ${width},
-      height: ${height + 4}
+    <group id='a' style={{
+      name: '${NodeName.BaseNode}'
     }}>
-    <rect style={{
-      fill: '#fff',
-      x: 0,
-      y: 0,
-      width: ${width},
-      height: ${height}
-    }}/>
-  
-    <text style={{
-      marginLeft: ${width / 2},
-      marginTop: ${height / 2 - 8},
-      fill: '#000',
-      textAlign: 'center',
-      fontSize: ${options.fontSize[cfg.level] || 10}
-    }}>${cfg.label}</text>
-    </rect>
-    </rect>
+      <rect 
+      keyshape='true' 
+      style={{
+        fill: '#eee',
+        x: ${width / 2},
+        y: ${height / 2},
+        width: ${width},
+        height: ${height},
+        radius: 4,
+      }}
+      >
+        <text style={{
+          marginLeft: ${padding[1]},
+          marginTop: ${height / 2 - lineHeight},
+          fill: '#000',
+          lineHeight: ${lineHeight},
+          textBaseline: 'middle',
+          textAlign: 'left',
+          fontSize: ${fontSize}
+        }}>${label}</text>
+      </rect>
     </group>
     `
   },
+  getSize(cfg) {
+    const { fontSize, maxWidth, padding, lineHeight } = config.subNode;
+    const label = fittingString(
+      cfg.label,
+      maxWidth,
+      fontSize,
+    );
+    const width = fittingLabelWidth(label, fontSize, padding[1]);
+    const height = fittingLabelHeight(label, lineHeight, padding[0]);
+    return [width, height]
+  },
   getAnchorPoints() {
     return [
-      [0, 1],
-      [1, 1],
+      [0, 0.5],
+      [1, 0.5],
     ];
   },
 }
 
-G6.registerNode("sub", RootNode);
-G6.registerNode("leaf", RootNode);
+G6.registerNode("subNode", SubNode);
+G6.registerNode("leafNode", SubNode)
+
+export default SubNode
