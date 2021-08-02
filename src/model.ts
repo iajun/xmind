@@ -1,14 +1,10 @@
-import { Node, NodeType } from "./types";
+import { ModelNode, Node, NodeType } from "./types";
 import _ from "lodash";
 
 const NO_ID = "__NO_ID__";
 const CONCAT_ID_KEY = "$$";
 
-export type ModelNode = Node & {
-  type: NodeType;
-  children: Node[];
-  level: number;
-};
+
 
 const genMap = <T>(
   list: T[],
@@ -70,6 +66,7 @@ class Model {
         const children = [];
         while (node) {
           node.children = genChildren(node, null, level + 1);
+          node.collapsed = false
           node.type =
             key === this.rootKey
               ? "rootNode"

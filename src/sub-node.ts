@@ -1,63 +1,59 @@
-import G6 from '@antv/g6'
-import config from './config';
-import { NodeName } from './constants';
-import { fittingLabelHeight, fittingLabelWidth, fittingString } from './utils';
+import G6, { Util } from "@antv/g6";
+import config from "./config";
+import { ItemState, NodeName } from "./constants";
+import { fittingLabelHeight, fittingLabelWidth, fittingString } from "./utils";
+
+const NODE_BOTTOM_LINE = 'node-bottom-line'
+export const ACTIVE_STROKE =  "#096DD9"
 
 const options = {
+  style: {
+    fill: "#fff",
+    lineWidth: 0,
+  },
   stateStyles: {
-    selected: {
-      stroke: "#50B6F0",
-      lineWidth: config.global.lineWidth
+    [ItemState.Selected]: {
+      stroke:ACTIVE_STROKE,
+      lineWidth: 1,
+      fill: "#E2F0FE",
     },
   },
-}
-
-const FOLD_BUTTON_RADIUS = 4
-
-
-// <group style={{
-//   opacity: 0
-// }}> 
-// <circle
-// style={{
-//   fill: '#fff',
-//   marginLeft: ${width},
-//   r: ${FOLD_BUTTON_RADIUS},
-//   stroke: '#959EA6'
-// }}
-// >
-
-// </circle>
-// <path style={{
-//   stroke: '#959EA6',
-//   path: [
-//     ['M', ${width - FOLD_BUTTON_RADIUS * 0.6}, ${height + 4}],
-//     ['L', ${width + FOLD_BUTTON_RADIUS * 0.6}, ${height + 4}]
-//   ],
-// }} />
-// </group>
-
+};
 
 const SubNode = {
-  options ,
+  options,
+  setState(key, value, item) {
+    const keyShape = item.getKeyShape();
+    const group = item.getContainer();
+    const path = group.findAllByName(NODE_BOTTOM_LINE)[0];
+    if (key === ItemState.Selected) {
+      const selectedStyles = this.options.stateStyles[ItemState.Selected];
+      if (value) {
+        keyShape.attr(selectedStyles);
+        path.attr({
+          stroke: ACTIVE_STROKE
+        })
+      } else {
+        keyShape.attr(this.options.style);
+        path.attr({
+          stroke: config.global.stroke
+        })
+      }
+    }
+  },
   jsx(cfg) {
-    const { fontSize, maxWidth, padding, lineHeight } = config.subNode;
-    const label = fittingString(
-      cfg.label,
-      maxWidth,
-      fontSize,
-    );
-    const width = fittingLabelWidth(label, fontSize, padding[1]);
-    const height = fittingLabelHeight(label, lineHeight, padding[0]);
+    const { fontSize, maxLabelWidth, padding, lineHeight, minWidth } = config.subNode;
+    const formattedPadding = Util.formatPadding(padding);
+    const label = fittingString(cfg.label, maxLabelWidth, fontSize);
+    const width = Math.max(fittingLabelWidth(label, fontSize,), minWidth) + formattedPadding[1] + formattedPadding[3];
+    const height = fittingLabelHeight(label, lineHeight) + formattedPadding[0] + formattedPadding[2];
 
     return `
-    <group id='a' style={{
-      name: '${NodeName.BaseNode}'
-    }}>
+    <group>
       <rect 
+      draggable='true'
       keyshape='true' 
       style={{
-        fill: '#eee',
         x: ${width / 2},
         y: ${height / 2},
         width: ${width},
@@ -65,39 +61,48 @@ const SubNode = {
         radius: 4,
       }}
       >
-        <text style={{
-          marginLeft: ${padding[1]},
-          marginTop: ${height / 2 - lineHeight},
-          fill: '#000',
+        <text
+        name=${NodeName.BaseNodeText}
+        draggable='true'
+        style={{
+          marginLeft: ${formattedPadding[3]},
           lineHeight: ${lineHeight},
-          textBaseline: 'middle',
+          marginTop: ${-formattedPadding[0]},
+          fill: '#333',
+          textBaseline: 'top',
           textAlign: 'left',
           fontSize: ${fontSize}
         }}>${label}</text>
+
+        <path name=${NODE_BOTTOM_LINE} style={{
+          stroke: ${config.global.stroke},
+          lineWidth: ${config.global.lineWidth},
+          path: [
+            ['M', 0, ${height}],
+            ['H', ${width}]
+          ]
+        }} />
       </rect>
     </group>
-    `
+    `;
   },
   getSize(cfg) {
-    const { fontSize, maxWidth, padding, lineHeight } = config.subNode;
-    const label = fittingString(
-      cfg.label,
-      maxWidth,
-      fontSize,
-    );
-    const width = fittingLabelWidth(label, fontSize, padding[1]);
-    const height = fittingLabelHeight(label, lineHeight, padding[0]);
-    return [width, height]
+    const { fontSize, maxLabelWidth, padding, lineHeight, minWidth } = config.subNode;
+    const formattedPadding = Util.formatPadding(padding);
+    const label = fittingString(cfg.label, maxLabelWidth, fontSize);
+    const width = Math.max(fittingLabelWidth(label, fontSize,), minWidth) + formattedPadding[1] + formattedPadding[3];
+    const height = fittingLabelHeight(label, lineHeight) + formattedPadding[0] + formattedPadding[2];
+    return [width, height];
   },
   getAnchorPoints() {
     return [
-      [0, 0.5],
-      [1, 0.5],
+      [0, 1],
+      [1, 1],
     ];
   },
-}
+};
 
 G6.registerNode("subNode", SubNode);
-G6.registerNode("leafNode", SubNode)
+G6.registerNode("leafNode", SubNode);
 
-export default SubNode
+export default SubNode;

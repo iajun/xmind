@@ -5,7 +5,7 @@ export type NodeConfig = {
   lineHeight: number;
   padding: [number, number],
   textAlign: LabelStyle['textAlign'],
-  maxWidth: number
+  maxLabelWidth: number
 }
 
 export default {
@@ -13,21 +13,23 @@ export default {
     fontSize: 16,
     padding: [10, 20],
     textAlign: "center",
-    maxWidth: 300,
+    maxLabelWidth: 300,
     lineHeight: 18,
   } as NodeConfig,
-  xmindNode: {
-    fontSize: 10,
-    padding: [2, 10],
-    textAlign: "left",
-    maxWidth: 500,
-    lineHeight: 16,
-  } as NodeConfig,
   subNode: {
-    fontSize: 10,
-    padding: [2, 10],
+    fontSize: 14,
+    padding: [6, 10],
     textAlign: "left",
-    maxWidth: 500,
+    maxLabelWidth: 500,
+    minWidth: 40,
+    lineHeight: 20,
+  } as NodeConfig,
+  xmindNode: {
+    fontSize: 14,
+    padding: [6, 10],
+    textAlign: "left",
+    maxLabelWidth: 500,
+    minWidth: 40,
     lineHeight: 16,
   } as NodeConfig,
   leafNode: {
@@ -35,10 +37,10 @@ export default {
     padding: [2, 8],
     textAlign: "left",
     lineHeight: 14,
-    maxWidth: 500,
+    maxLabelWidth: 500,
   } as NodeConfig,
   global: {
-    stroke: '#000',
+    stroke: '#959EA6',
     lineWidth: 2,
   }
 };

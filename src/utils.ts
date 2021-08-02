@@ -1,21 +1,26 @@
-import G6, { IEdge, IGraph, INode } from '@antv/g6'
+import G6, { ComboConfig, EdgeConfig, IEdge, IGraph, INode, NodeConfig, TreeGraphData } from '@antv/g6'
+import _ from 'lodash';
 import { ItemState, EditorEvent, GraphState } from './constants';
+import { ModelNode } from './types';
 const { Util } = G6;
 
 const isTextWrap = (str: string) => str === '\n';
 
 export const fittingString = (str:string, maxWidth: number, fontSize: number) => {
-  const pattern = new RegExp('[\u4E00-\u9FA5]+'); // distinguish the Chinese charactors and letters
   let currentWidth = 0;
   let res = '';
   let tmp = ''
   str.split('').forEach((letter) => {
     if (currentWidth > maxWidth || isTextWrap(letter)) {
       res += `${tmp}\n`
-      tmp = '';
+      if (!isTextWrap(letter)) {
+        tmp = letter;
+      } else {
+        tmp = ''
+      }
       currentWidth = 0;
     } else {
-      currentWidth +=  pattern.test(letter) ? fontSize : Util.getLetterWidth(letter, fontSize);;
+      currentWidth += Util.getLetterWidth(letter, fontSize);;
       tmp += letter;
     }
   })
@@ -23,15 +28,15 @@ export const fittingString = (str:string, maxWidth: number, fontSize: number) =>
   return res;
 };
 
-export const fittingLabelWidth = (label: string, fontSize: number, paddingX: number) => {
+export const fittingLabelWidth = (label: string, fontSize: number) => {
   const maxLabelWidth = Math.max(...label.split('\n').map(line => Util.getTextSize(line, fontSize)[0]))
-  return  maxLabelWidth+ paddingX * 2;
+  return  maxLabelWidth;
 }
 
 
-export const fittingLabelHeight = (label: string, lineHeight: number, paddingY: number) => {
+export const fittingLabelHeight = (label: string, lineHeight: number) => {
   const textCols = label.split("\n").length;
-  return lineHeight * textCols + paddingY * 2;
+  return lineHeight * textCols;
 }
 
 /** 获取图表状态 */
@@ -95,4 +100,41 @@ export function setSelectedItems(graph: IGraph, items: INode[] | string[]) {
   graph.emit(EditorEvent.onGraphStateChange, {
     graphState: getGraphState(graph),
   });
+}
+
+export const getLabelByModel = (model:NodeConfig | EdgeConfig | ComboConfig | TreeGraphData): string => {
+  if (typeof model.label === 'object') {
+    return model.label.text || ''
+  } else {
+    return model.label || ''
+  }
+}
+
+export const isLabelEqual = (t1: string, t2: string) => {
+  const mapText = (t: string) => t.trim()
+  return _.isEqual(t1.split('\n').map(mapText), t2.split('\n').map(mapText))
+}
+
+export const getPositionByPoint = (text: string, point: {x: number, y: number}, fontSize: number, lineHeight: number, ) => {
+  const {x, y} = point;
+  const row = Math.floor(y / lineHeight + 1)
+  const str =  text.split('\n')[row - 1]
+  let len = 0, col = 0;
+  while (len < x) {
+    len += Util.getLetterWidth(str[col++], fontSize)
+  }
+  if (len - x > Util.getLetterWidth(str[col])) {
+    col--;
+  }
+  const beforeLen = text.split('\n').slice(0, row - 1).reduce((a, b) => a += b.length, 0)
+  
+  return beforeLen + col;
+}
+
+export const treeToList = (tree: ModelNode[]) => {
+  const arr: ModelNode[] = []
+  Util.traverseTree(tree, item => {
+    arr.push(item)
+  })
+  return arr;
 }

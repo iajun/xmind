@@ -7,14 +7,14 @@ const options = config.rootNode
 const RootNode = {
   options,
   jsx(cfg) {
-    const { fontSize, maxWidth, padding, lineHeight } = options;
+    const { fontSize, maxLabelWidth, padding, lineHeight } = options;
     const label = fittingString(
       cfg.label,
-      maxWidth,
+      maxLabelWidth,
       fontSize,
     );
-    const width = fittingLabelWidth(label, fontSize, padding[1]);
-    const height = fittingLabelHeight(label, lineHeight, padding[0]);
+    const width = fittingLabelWidth(label, fontSize);
+    const height = fittingLabelHeight(label, lineHeight);
     
     return `
     <group name='rootNode'>

@@ -7,15 +7,15 @@ export interface FoldCommandParams {
 
 class FoldCommand implements ICommand<FoldCommandParams> {
   private graph: Graph;
-  name = "fold";
+  name = "unfold";
 
   params = {
     id: "",
   };
 
   shortcuts = [
-    ["metaKey", "/"],
-    ["ctrlKey", "/"],
+    ["metaKey", "\\"],
+    ["ctrlKey", "\\"],
   ];
 
   constructor(graph: Graph) {
@@ -39,7 +39,7 @@ class FoldCommand implements ICommand<FoldCommandParams> {
 
     const model = selectedNode.getModel() as ModelNode;
 
-    if (model.collapsed || !model.children) return false;
+    if (!model.collapsed || !model.children) return false;
 
     return true;
   }

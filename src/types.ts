@@ -1,4 +1,4 @@
-import { IGraph } from "@antv/g6";
+import { IEdge, INode } from "@antv/g6";
 
 export type Node = {
   id: string;
@@ -8,27 +8,34 @@ export type Node = {
   [key: string]: any;
 };
 
+export type ModelNode = Node & {
+  type: NodeType;
+  children: Node[];
+  level: number;
+  collapsed?: boolean;
+};
+
 export type NodeType = "rootNode" | "subNode" | "leafNode";
 
-export interface Command<P = object, G = IGraph> {
+export interface ICommand<P = object> {
   /** 命令名称 */
   name: string;
   /** 命令参数 */
   params: P;
   /** 是否可以执行 */
-  canExecute(graph: G): boolean;
-  /** 是否应该执行 */
-  shouldExecute(graph: G): boolean;
+  canExecute(): boolean;
   /** 是否可以撤销 */
-  canUndo(graph: G): boolean;
-  /** 初始命令 */
-  init(graph: G): void;
+  canUndo(): boolean;
   /** 执行命令 */
-  execute(graph: G): void;
+  execute(): void;
   /** 撤销命令 */
-  undo(graph: G): void;
+  undo(): void;
+  /** 初始化参数 */
+  init(): void
   /** 命令快捷键 */
   shortcuts: string[] | string[][];
 }
 
-export type Item = 'node' | 'edge'
+export type ItemType = "node" | "edge";
+
+export type Item = INode | IEdge;
