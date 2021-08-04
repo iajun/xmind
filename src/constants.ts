@@ -1,9 +1,7 @@
 export enum ItemState {
-  Active = 'active',
-  ActiveAnchorPoints = 'activeAnchorPoints',
   Selected = 'selected',
-  HighLight = 'highLight',
-  Error = 'error',
+  Editing = 'editing',
+  ViewingRemark = 'view-remark'
 }
 
 export enum ItemType {
@@ -15,6 +13,7 @@ export enum NodeName {
   BaseNode = 'baseNode',
   BaseNodeText = 'baseNodeText',
   XmindNode = 'xmindNode',
+  Remark = 'xmindNodeRemark',
 }
 
 export enum EditorEvent {

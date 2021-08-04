@@ -1,6 +1,7 @@
 import config from "../config";
 import G6, { Util, IGroup, ShapeOptions } from "@antv/g6";
 import { ModelNode } from "../types";
+import { NodeName } from "../constants";
 
 export const FOLD_BUTTON_GROUP = "node-fold-button";
 
@@ -46,6 +47,9 @@ export const XmindNode: ShapeOptions = {
     if (!this.hasButton(model)) return;
     if (!group) return;
 
+
+
+
     this.drawButton(model, group);
   },
   hasButton(model: ModelNode) {
@@ -67,6 +71,7 @@ export const XmindNode: ShapeOptions = {
       drawFoldButton(buttonGroup);
     }
     const [width, height] = this.getSize!(model);
+    
     buttonGroup.translate(width, height);
   },
   afterUpdate(model: any, item) {
@@ -75,6 +80,12 @@ export const XmindNode: ShapeOptions = {
     if (!container) return;
 
     this.drawButton(model, container);
+  },
+  getAnchorPoints() {
+    return [
+      [0, 1],
+      [1, 1],
+    ];
   },
 };
 

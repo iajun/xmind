@@ -6,12 +6,11 @@ import {
   NodeConfig,
   Util,
   INode,
-  TreeGraphData,
 } from "@antv/g6";
-import { GraphCommonEvent, GraphNodeEvent } from "./../constants";
+import { ItemState } from "./../constants";
 import { BehaviorOption } from "@antv/g6";
 import Graph from "../graph";
-import _, { xor } from "lodash";
+import _  from "lodash";
 
 const DELEGATE_PLACEHOLDER_ID = 'DELEGATE_PLACEHOLDER_ID'
 
@@ -50,15 +49,13 @@ const DragNodeBehavior: BehaviorOption = {
   },
   onDragStart(this: any, e: IG6GraphEvent) {
     const { item } = e;
-    if (!item || item.destroyed || item.getType() !== 'node') return;
+    if (!item) return;
     
     const graph: Graph = this.get("graph");
     
     const itemId = item.getID();
     const originalModel = item.getModel()
     const list: StoreListItem[] = [];
-
-    this.targets = [item];
 
     graph.findAll("node", (nodeItem) => {
       const model = nodeItem.getModel() as NodeConfig;
@@ -76,10 +73,6 @@ const DragNodeBehavior: BehaviorOption = {
       item.getContainer().getMatrix()
     );
 
-    graph.recursiveExec(item => {
-      graph.hideItem(item, false)
-    }, itemId)
-
     this.dragData = {
       list: _.cloneDeep(list),
       box,
@@ -87,13 +80,26 @@ const DragNodeBehavior: BehaviorOption = {
       originalModel
     };
 
+    graph.setItemState(item, ItemState.Placeholder, true)
+
+    graph.recursiveExec(item => {
+      if (item.getID() === itemId) return;
+      graph.hideItem(item)
+    }, itemId)
+
+    this.hasStarted = true;
+
     this.origin = {
       x: e.x,
       y: e.y,
     };
   },
   onDrag: function onDrag(this: any, e: IG6GraphEvent) {
-    if (!e.item || e.item.destroyed || e.item.getType() !== 'node') return;
+    if (!e.item || e.item.destroyed || e.item.getType() !== 'node' || !this.hasStarted) return;
+
+    this.updateDelegate(e);
+    this.updatePosition(e)
+
     const data: StoreData = this.dragData;
     const { list, box, point } = data;
     const itemLeftCenteredPoint = {
@@ -111,18 +117,16 @@ const DragNodeBehavior: BehaviorOption = {
     );
 
     const parent = getClosestItem(lastDepthList, itemLeftCenteredPoint);
+    if (!parent) return;
     const bottomSiblings = list.filter(
       (item) => item.model.parentId === parent.model.id && item.box.y > e.y
     );
     const bottomSibling = getClosestItem(bottomSiblings, { x: e.x, y: e.y });
     
-
     this.dragData = { ...data, parent, bottomSibling };
-    
-    this.updatePlaceholder(e);
-    this.updateDelegate(e);
   },
   onDragEnd: function onDragEnd(this: any) {
+    if (!this.hasStarted) return;
     const graph: Graph = this.get("graph");
     const { parent, bottomSibling, originalModel } = this.dragData;
     if (!parent) return;
@@ -144,9 +148,9 @@ const DragNodeBehavior: BehaviorOption = {
     this.origin = null;
     this.dragData = null;
     this.lastPlaceholder = null;
-    
+    this.hasStarted = false
   },
-  updatePlaceholder(this: any, e: IG6GraphEvent) {
+  updatePosition(this: any, e: IG6GraphEvent) {
     if (!this.dragData) return;
     
     const { parent, bottomSibling } = this.dragData;
@@ -154,31 +158,14 @@ const DragNodeBehavior: BehaviorOption = {
     if (this.lastPlaceholder) {
       const { lastParentId, lastSiblingId } = this.lastPlaceholder; 
       
-      if (parent.model.id === lastParentId && bottomSibling?.model.id === lastSiblingId) {
+      if ((parent?.model.id || null) === lastParentId && (bottomSibling?.model.id || null) === lastSiblingId) {
         return;
       }
     }
-    
-    const placeholderItem = {
-      id: DELEGATE_PLACEHOLDER_ID,
-      label: 'placeholder',
-      type: 'delegateNode',
-      children: []
-    };
-
-
-    const graph: Graph = this.graph;
-    graph.removeChild(DELEGATE_PLACEHOLDER_ID)
-
-    if (bottomSibling) {
-      // graph.insertBefore(bottomSibling.model.id, placeholderItem)
-    } else {
-      graph.addChild(placeholderItem, parent.model.id)
-    }
 
     this.lastPlaceholder = {
-      lastParentId: parent.model.id,
-      lastSiblingId: bottomSibling?.model.id
+      lastParentId: parent?.model.id || null,
+      lastSiblingId: bottomSibling?.model.id || null
     }
 
   },
@@ -219,10 +206,7 @@ const DragNodeBehavior: BehaviorOption = {
   },
   calculationGroupPosition(evt: IG6GraphEvent) {
     if (!evt.item) return;
-    const nodes = this.targets as INode[];
-    if (nodes.length === 0) {
-      nodes.push(evt.item as INode);
-    }
+    const nodes = [evt.item as INode]
 
     let minx = Infinity;
     let maxx = -Infinity;

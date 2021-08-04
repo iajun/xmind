@@ -47,7 +47,6 @@ class redoCommand implements ICommand<{}> {
     if (command && command.params.id) {
       const id = command.params.id;
       this.graph.setSelectedItems([id])
-      this.graph.focusItem(id, true);
     }
 
     command.execute();

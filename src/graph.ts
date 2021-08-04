@@ -1,7 +1,7 @@
-import { GraphNodeEvent, GraphState, ItemState } from "./constants";
-import { IEdge, INode, TreeGraph, Util } from "@antv/g6";
+import { GraphState, ItemState } from "./constants";
+import { GraphData, IEdge, INode, TreeGraph, TreeGraphData, Util } from "@antv/g6";
 import { Item } from "./types";
-import _, { isDate } from "lodash";
+import _ from "lodash";
 
 class Graph extends TreeGraph {
   static Event = {
@@ -21,10 +21,14 @@ class Graph extends TreeGraph {
     return rootNode.id === item
   }
 
-  editNode(item: Item) {
-    const event = new Event(GraphNodeEvent.onNodeEdit)
-    event.item = item; 
-    this.emit(GraphNodeEvent.onNodeEdit, event)
+  keepMatrix<Args extends any[], Result>(fn: (...args: Args) => Result) {
+    const matrix = this.getGroup().getMatrix()
+    const context = this;
+    return function(...args: Args): Result {
+      const result = fn.apply(context, args)
+      context.getGroup().setMatrix(matrix)
+      return result;
+    }
   }
 
   /** 获取选中节点 */
@@ -38,7 +42,7 @@ class Graph extends TreeGraph {
   }
 
   /** 批量状态更新 */
-  private executeBatch(execute: Function) {
+  executeBatch(execute: Function) {
     const autoPaint = this.get("autoPaint");
 
     this.setAutoPaint(false);
@@ -108,25 +112,6 @@ class Graph extends TreeGraph {
     });
 
     this.emitStateChange()
-  }
-
-  insertBefore(id: string, model) {
-    const item = this.findById(id)
-    if (!item) return;
-    const tree = _.cloneDeep(this.get('data'));
-    const parentId = model.parentId = item.getModel().parentId
-    model.nextId = id;
-    Util.traverseTree(tree, item => {
-      if (item.id === parentId) {
-        const idx = item.children.findIndex(item => item.id === id);
-        item.children.splice(idx[0], 0, model)
-      }
-    })
-    
-    
-    const matrix = this.getGroup().getMatrix();
-    this.changeData(tree);
-    this.getGroup().setMatrix(matrix);
   }
 
   recursiveExec(updateFunc: (item: Item) => void, startId?: string) {

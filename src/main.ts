@@ -5,51 +5,34 @@ import "./behavior";
 import Graph from "./graph";
 import "./style.css";
 import list from "./data";
-// import list from "./test";
-import "./shape/root-node";
-import "./shape/sub-node";
+import RootNode from "./shape/root-node";
+import SubNode from "./shape/sub-node";
 import "./shape/xmind-node";
 import "./shape/delegate-node";
 import config from "./config";
-import { fittingLabelHeight, fittingLabelWidth } from "./utils";
 import { ModelNode } from "./types";
-import { IG6GraphEvent, Util } from "@antv/g6";
+import { IG6GraphEvent, Tooltip, Util } from "@antv/g6";
 import _ from "lodash";
 import { FOLD_BUTTON_GROUP } from "./shape/xmind-node";
+import { NodeName } from "./constants";
 
 const model = new Model(list);
 
-const tree = new Graph({
+const graph = new Graph({
   container: "xmind",
-  width: 1600,
-  height: 800,
+  width: 1400,
+  height: 600,
   animate: false,
   fitViewPadding: [10, 20],
+  enabledStack: false,
   layout: {
     type: "mindmap",
     direction: "H",
     getWidth: (node: ModelNode) => {
-      const nodeConfig = config[node.type] || config.subNode;
-
-      const formattedPadding = Util.formatPadding(nodeConfig.padding);
-      const width =
-        Math.max(
-          fittingLabelWidth(node.label, nodeConfig.fontSize),
-          nodeConfig.minWidth
-        ) +
-        formattedPadding[1] +
-        formattedPadding[3];
-      return width;
+      return SubNode.getSize(node)[0];
     },
     getHeight: (node: ModelNode) => {
-      const nodeConfig = config[node.type] || config.subNode;
-
-      const formattedPadding = Util.formatPadding(nodeConfig.padding);
-      const height =
-        fittingLabelHeight(node.label, nodeConfig.lineHeight) +
-        formattedPadding[0] +
-        formattedPadding[2];
-      return height;
+      return SubNode.getSize(node)[1];
     },
     getSide: () => {
       return "right";
@@ -65,14 +48,8 @@ const tree = new Graph({
   modes: {
     default: [
       "click-item",
-      "drag-node",
       {
         type: "scroll-canvas",
-        scalableRange: 0,
-      },
-      {
-        type: "drag-node",
-        enableDelegate: true,
       },
       {
         type: "collapse-expand",
@@ -80,17 +57,31 @@ const tree = new Graph({
       },
     ],
   },
-  plugins: [new EditableLabel()],
+  plugins: [new EditableLabel(), new Tooltip({
+    shouldBegin: shouldTooltipBegin,
+    trigger: 'click',
+    getContent: ( e: IG6GraphEvent ) => {
+      if (!e || !e.item) return;
+      return e.item.getModel().remark || '';
+    },
+  })],
 });
 
-tree.data(model.data);
+graph.data(model.data);
 
-tree.render();
+graph.render();
 
-const commandController = new CommandController(tree);
-tree.set("command", commandController);
+const commandController = new CommandController(graph);
+graph.set("command", commandController);
 
-model.data?.id && tree.focusItem(model.data.id);
+function shouldTooltipBegin(e: IG6GraphEvent) {
+  const target = e.target;
+  if (!target) return;
+  if (target && target.get('name') === NodeName.Remark)  {
+    return true;
+  }
+  return false;
+}
 
 function shouldBeginCollapseExpand(e: IG6GraphEvent) {
   const { target, item } = e;

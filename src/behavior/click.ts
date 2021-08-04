@@ -1,3 +1,4 @@
+import { NodeName } from './../constants';
 import { BehaviorOption } from '@antv/g6';
 import { ItemState } from '../constants';
 import Graph from '../graph';
@@ -18,15 +19,16 @@ const ClickItemBehavior: BehaviorOption  = {
     };
   },
 
-  handleItemClick({ item }: {item: Item}) {
+  handleItemClick({ item, target }: {item: Item}) {
     const graph = this.graph as Graph;
 
     const isSelected = item.hasState(ItemState.Selected);
     graph.clearSelectedState(selectedItem => selectedItem !== item)
 
     if (!isSelected) {
-      graph.setItemState(item, ItemState.Selected, true)
+      graph.setItemState(item, ItemState.Selected, true) 
     }
+
   },
 
   handleCanvasClick() {

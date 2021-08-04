@@ -65,7 +65,8 @@ class PasteCommand implements ICommand<PasteCommandParams> {
       item.id = v4()
     })
     this.params.newRootId = model.id;
-    graph.addChild(model, targetId)
+    graph.keepMatrix(graph.addChild)(model, targetId)
+    graph.setSelectedItems([graph.findById(model.id)])
   }
 }
 

@@ -29,9 +29,8 @@ class TopicCommand implements ICommand<TopicCommandParams> {
   undo(): void {
     const { graph, params } = this;
     const { newId, sourceId } = params;
-    graph.removeChild(newId);
+    graph.keepMatrix(graph.removeChild)(newId);
     const item = graph.findById(sourceId);
-    graph.focusItem(sourceId)
     graph.setSelectedItems([item])
   }
 
@@ -56,12 +55,9 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { sourceId } = params;
     const item = graph.findById(sourceId)!;
     const id = v4();
-    graph.addChild({ id, label: "subTopic", parentId: sourceId, type: 'xmindNode', children: [] }, item);
     this.params.newId = id;
+    graph.keepMatrix(graph.addChild)({ id, label: "subTopic", parentId: sourceId, type: 'xmindNode', children: [] }, item)
     graph.setSelectedItems([graph.findById(id)])
-    graph.focusItem(id, true)
-
-    // this.graph.layout(false);
   }
 }
 

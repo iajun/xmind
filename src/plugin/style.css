@@ -1,0 +1,19 @@
+.g6-editable {
+  border-radius: 4px;
+  color: #333;
+  word-break: break-all;
+  position: absolute;
+  will-change: transform;
+  top: 0;
+  left: 0;
+  minHeight: 20px;
+  background: #E2F0FE;
+  width: auto;
+  transform-origin: top left;
+}
+
+.g6-editable-label {
+  outline: 0;
+  height: auto;
+  white-space: pre-wrap;
+}

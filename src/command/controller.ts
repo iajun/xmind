@@ -1,4 +1,4 @@
-import { RendererType } from "./../constants";
+import { ItemState, RendererType } from "./../constants";
 import Graph from "../graph";
 import CommandManager from "./manager";
 import createCommandManager from "./create-manager";
@@ -63,7 +63,8 @@ class CommandController {
 
     this.graph.on(GraphCommonEvent.onKeyDown, (e) => {
       if (!this.shouldTriggerShortcut()) return;
-      
+      // editing
+     if (this.graph.findAllByState('node', ItemState.Editing).length)  return;
 
       Object.values(manager.command).some((command) => {
         const { name, shortcuts } = command;

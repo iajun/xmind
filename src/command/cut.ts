@@ -33,7 +33,7 @@ class CutCommand implements ICommand<CutCommandParams> {
   undo(): void {
     const { graph, params } = this;
     const { parentId, model } = params
-    graph.addChild(model!, parentId)
+    graph.keepMatrix(graph.addChild)(model!, parentId)
   }
 
   canExecute(): boolean {
@@ -60,7 +60,7 @@ class CutCommand implements ICommand<CutCommandParams> {
     const { graph, params } = this;
     const { id } = params
     graph.set('clipboard', {id, model: graph.findDataById(id)})
-    graph.removeChild(id)
+    graph.keepMatrix(graph.removeChild)(id)
   }
 }
 

@@ -6,18 +6,23 @@ const list: Node[] = [
     parentId: null,
     nextId: null,
     label: "root node",
+    priority: 3,
   },
   {
     id: "__2__",
     parentId: "__1__",
     nextId: "__3__",
     label: "second first node",
+    priority: 1,
+    remark:'hello',
   },
   {
     id: "__3__",
     parentId: "__1__",
     nextId: null,
     label: "second second node",
+    priority: 2,
+    remark:'分局案例放假啦flajfljadlfjalflajlfa分局案例饭局按逻辑阀了',
   },
   {
     id: "__4__",

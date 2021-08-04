@@ -1,5 +1,4 @@
 import G6 from "@antv/g6";
-import config from "../config";
 
 export const ACTIVE_STROKE =  "#096DD9"
 const delegateStyle = {
@@ -7,7 +6,6 @@ const delegateStyle = {
 
 const DelegateNode = {
   jsx() {
-    const { lineHeight, minWidth } = config.subNode;
     const width = 100
     const height = 40
 
