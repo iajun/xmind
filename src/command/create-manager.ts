@@ -10,6 +10,7 @@ import PasteCommand from "./paste";
 import CutCommand from "./cut";
 import TopicCommand from "./topic";
 import SubTopicCommand from "./subTopic";
+import DragCommand from './drag'
 
 export default function createCommandManager(graph: Graph) {
   const manager = new CommandManager();
@@ -23,6 +24,7 @@ export default function createCommandManager(graph: Graph) {
   const cutCommand = new CutCommand(graph);
   const topicCommand = new TopicCommand(graph);
   const subTopicCommand = new SubTopicCommand(graph);
+  const dragCommand = new DragCommand(graph);
   
   manager.register(foldCommand.name, foldCommand);
   manager.register(unfoldCommand.name, unfoldCommand);
@@ -34,6 +36,7 @@ export default function createCommandManager(graph: Graph) {
   manager.register(cutCommand.name, cutCommand);
   manager.register(topicCommand.name, topicCommand);
   manager.register(subTopicCommand.name, subTopicCommand);
+  manager.register(dragCommand.name, dragCommand);
 
   return manager;
 }

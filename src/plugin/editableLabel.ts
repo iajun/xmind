@@ -5,7 +5,7 @@ import { IG6GraphEvent, Item } from "@antv/g6-core";
 import Base from "@antv/g6-plugin/lib/base";
 import { getLabelByModel, getPositionByPoint, isLabelEqual } from "../utils";
 import config from "../config";
-import { Util } from "@antv/g6";
+import { INode, Util } from "@antv/g6";
 import Graph from "../graph";
 import { ModelNode } from "../types";
 
@@ -96,16 +96,25 @@ export default class Menu extends Base {
     el.addEventListener(eventName, listener, options);
   }
 
-  adjustStyle(item) {
+  adjustNodeSize(item) {
+    const labelShape = this.getLabelShape(item);
+    if (!labelShape) return;
+    const lineHeight = labelShape.attr("lineHeight");
+    modifyCSS(this.editorEl, {
+      'max-width': `${config.subNode.maxLabelWidth}px`,
+      height: 'auto',
+      'line-height': `${lineHeight}px`
+    })
+  }
+
+  adjustPosition(item: INode) {
     const labelShape = this.getLabelShape(item);
     if (!labelShape) return;
     const graph: Graph = this.get("graph");
     const font = labelShape.attr("font");
-    const lineHeight = labelShape.attr("lineHeight");
-    
+
     const matrix = graph.getGroup().getMatrix();
     const containerPoint = Util.applyMatrix(item.getBBox(), matrix);
-    
     const matrixString = [matrix[0], matrix[1],matrix[3], matrix[4],  containerPoint.x, containerPoint.y].join()
 
     modifyCSS(this.wrapperEl, {
@@ -114,21 +123,11 @@ export default class Menu extends Base {
       padding: Util.formatPadding(config.subNode.padding).map(( n: number ) => `${n}px`).join(' '),
       visibility: "visible",
     });
-
-    modifyCSS(this.editorEl, {
-      'max-width': `${config.subNode.maxLabelWidth}px`,
-      height: 'auto',
-      'line-height': `${lineHeight}px`
-    })
-
   }
 
   protected onShow(e: IG6GraphEvent) {
     e.preventDefault();
     e.stopPropagation();
-
-    console.log(e);
-    
 
     const item = e.item;
 
@@ -138,11 +137,15 @@ export default class Menu extends Base {
     const labelShape = this.getLabelShape(item);
     if (!labelShape) return;
 
+    this.adjustPosition = this.adjustPosition.bind(this, item)
+    this.get('graph').on('wheel', this.adjustPosition)
+
     const editorElDom = this.editorEl;
     const originalLabel = getLabelByModel(model);
     editorElDom.innerText = originalLabel;
 
-    this.adjustStyle(item);
+    this.adjustPosition(item);
+    this.adjustNodeSize(item);
 
     const command = this.get("graph").get("command");
     const onBlur = () => {
@@ -162,10 +165,6 @@ export default class Menu extends Base {
     this.unbindAllListeners();
 
     this.bindListener("inputBlur", editorElDom, "blur", onBlur);
-    this.bindListener("click", editorElDom, "click", e => {
-      console.log(e);
-      
-    });
 
     this.bindListener(
       "outerClick",
@@ -212,6 +211,7 @@ export default class Menu extends Base {
 
   onHide() {
     this.unbindAllListeners();
+    this.get('graph').off('wheel', this.adjustPosition)
     modifyCSS(this.wrapperEl, {
       visibility: "hidden",
     });

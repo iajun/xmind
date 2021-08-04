@@ -6,6 +6,7 @@ export type NodeConfig = {
   padding: [number, number],
   textAlign: LabelStyle['textAlign'],
   maxLabelWidth: number
+  minWidth: number
 }
 
 export default {
@@ -13,6 +14,7 @@ export default {
     fontSize: 16,
     padding: [10, 20],
     textAlign: "center",
+    minWidth: 40,
     maxLabelWidth: 300,
     lineHeight: 18,
   } as NodeConfig,

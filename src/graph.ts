@@ -1,6 +1,7 @@
 import { GraphNodeEvent, GraphState, ItemState } from "./constants";
-import { IEdge, INode, TreeGraph } from "@antv/g6";
+import { IEdge, INode, TreeGraph, Util } from "@antv/g6";
 import { Item } from "./types";
+import _, { isDate } from "lodash";
 
 class Graph extends TreeGraph {
   static Event = {
@@ -107,6 +108,46 @@ class Graph extends TreeGraph {
     });
 
     this.emitStateChange()
+  }
+
+  insertBefore(id: string, model) {
+    const item = this.findById(id)
+    if (!item) return;
+    const tree = _.cloneDeep(this.get('data'));
+    const parentId = model.parentId = item.getModel().parentId
+    model.nextId = id;
+    Util.traverseTree(tree, item => {
+      if (item.id === parentId) {
+        const idx = item.children.findIndex(item => item.id === id);
+        item.children.splice(idx[0], 0, model)
+      }
+    })
+    
+    
+    const matrix = this.getGroup().getMatrix();
+    this.changeData(tree);
+    this.getGroup().setMatrix(matrix);
+  }
+
+  recursiveExec(updateFunc: (item: Item) => void, startId?: string) {
+    const ids: string[] =  [];
+    startId && ids.push(startId)
+    Util.traverseTree(this.get('data') ,item => {
+      if (startId) {
+        if (ids.includes(item.parentId)) {
+          ids.push(item.id)
+        }
+      } else {
+        ids.push(item.id)
+      }
+    })
+    
+    this.executeBatch(() => {
+      ids.forEach(id => {
+        const item = this.findById(id);
+        updateFunc(item)
+      })
+    })
   }
 }
 

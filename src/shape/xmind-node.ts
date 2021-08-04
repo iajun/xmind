@@ -1,6 +1,6 @@
-import config from "./config";
+import config from "../config";
 import G6, { Util, IGroup, ShapeOptions } from "@antv/g6";
-import { ModelNode } from "./types";
+import { ModelNode } from "../types";
 
 export const FOLD_BUTTON_GROUP = "node-fold-button";
 

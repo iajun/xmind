@@ -1,7 +1,7 @@
 import G6, { Util } from "@antv/g6";
-import config from "./config";
-import { ItemState, NodeName } from "./constants";
-import { fittingLabelHeight, fittingLabelWidth, fittingString } from "./utils";
+import config from "../config";
+import { ItemState, NodeName } from "../constants";
+import { fittingLabelHeight, fittingLabelWidth, fittingString } from "../utils";
 
 const NODE_BOTTOM_LINE = 'node-bottom-line'
 export const ACTIVE_STROKE =  "#096DD9"

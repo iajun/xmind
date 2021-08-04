@@ -45,7 +45,6 @@ class undoCommand implements ICommand<{}> {
     if (lastCommand && lastCommand.params.id) {
       const id = lastCommand.params.id;
       this.graph.setSelectedItems([id]);
-      this.graph.focusItem(id, true);
     }
 
     commandManager.commandIndex -= 1;

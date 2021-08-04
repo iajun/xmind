@@ -1,5 +1,5 @@
 import G6, { ComboConfig, EdgeConfig, IEdge, IGraph, INode, NodeConfig, TreeGraphData } from '@antv/g6'
-import _ from 'lodash';
+import _, { rest } from 'lodash';
 import { ItemState, EditorEvent, GraphState } from './constants';
 import { ModelNode } from './types';
 const { Util } = G6;
@@ -136,5 +136,5 @@ export const treeToList = (tree: ModelNode[]) => {
   Util.traverseTree(tree, item => {
     arr.push(item)
   })
-  return arr;
+  return arr.map(( { children , ...rest } ) => rest);
 }

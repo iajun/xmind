@@ -92,8 +92,6 @@ class CommandController {
 
 
         if (flag) {
-          console.log(name);
-          
           if (manager.canExecute(name)) {
             // Prevent default
             e.preventDefault();

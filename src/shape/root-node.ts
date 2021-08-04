@@ -1,20 +1,21 @@
-import G6 from '@antv/g6'
-import { fittingLabelHeight, fittingLabelWidth, fittingString } from "./utils";
-import config from "./config";
+import G6, { Util } from '@antv/g6'
+import { fittingLabelHeight, fittingLabelWidth, fittingString } from "../utils";
+import config from "../config";
 
 const options = config.rootNode
 
 const RootNode = {
   options,
   jsx(cfg) {
-    const { fontSize, maxLabelWidth, padding, lineHeight } = options;
+    const { fontSize, maxLabelWidth, padding, lineHeight, minWidth } = options;
     const label = fittingString(
       cfg.label,
       maxLabelWidth,
       fontSize,
     );
-    const width = fittingLabelWidth(label, fontSize);
-    const height = fittingLabelHeight(label, lineHeight);
+    const formattedPadding = Util.formatPadding(padding);
+    const width = Math.max(fittingLabelWidth(label, fontSize,), minWidth) + formattedPadding[1] + formattedPadding[3];
+    const height = fittingLabelHeight(label, lineHeight) + formattedPadding[0] + formattedPadding[2];
     
     return `
     <group name='rootNode'>

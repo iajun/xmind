@@ -1,508 +1,202 @@
-/*
- * @Author: moyee
- * @Date: 2019-06-27 18:12:06
- * @LastEditors: moyee
- * @LastEditTime: 2019-08-22 18:41:45
- * @Description: 拖动节点的Behavior
- */
-import { Point } from '@antv/g-base';
-import { deepMix, clone, debounce } from '@antv/util';
-import { G6Event, IG6GraphEvent, Item, NodeConfig, INode, ICombo } from '@antv/g6-core';
-import { IGraph } from '../interface/graph';
-import Global from '../global';
+import { deepMix } from "@antv/util";
+import {
+  IBBox,
+  IG6GraphEvent,
+  Global,
+  NodeConfig,
+  Util,
+  INode,
+  TreeGraphData,
+} from "@antv/g6";
+import { GraphCommonEvent, GraphNodeEvent } from "./../constants";
+import { BehaviorOption } from "@antv/g6";
+import Graph from "../graph";
+import _, { xor } from "lodash";
 
-export default {
+const DELEGATE_PLACEHOLDER_ID = 'DELEGATE_PLACEHOLDER_ID'
+
+type Point = { x: number; y: number };
+type StoreListItem = { model: NodeConfig; box: IBBox };
+type StoreData = { list: StoreListItem[]; box: IBBox; point: Point };
+
+const getClosestItem = (list: StoreListItem[], point: Point) => {
+  let target = list[0];
+  let dis = Number.MAX_SAFE_INTEGER;
+  list.forEach((item) => {
+    const { box } = item;
+    const distance =
+      Math.pow(Math.abs(point.x - (box.x + box.width)), 2) +
+      Math.pow(Math.abs(point.y - (box.y + box.height / 2)), 2);
+
+    if (distance < dis) {
+      dis = distance;
+      target = item;
+    }
+  });
+
+  return target;
+};
+
+const DragNodeBehavior: BehaviorOption = {
   getDefaultCfg(): object {
+    return {};
+  },
+  getEvents() {
     return {
-      updateEdge: true,
-      delegateStyle: {},
-      // 是否开启delegate
-      enableDelegate: false,
-      // 拖动节点过程中是否只改变 Combo 的大小，而不改变其结构
-      onlyChangeComboSize: false,
-      // 拖动过程中目标 combo 状态样式
-      comboActiveState: '',
-      selectedState: 'selected',
-      enableOptimize: false,
-      enableDebounce: false,
+      'node:dragstart': "onDragStart",
+      'node:drag': "onDrag",
+      'node:dragend': "onDragEnd",
     };
   },
-  getEvents(): { [key in G6Event]?: string } {
-    return {
-      'node:dragstart': 'onDragStart',
-      'node:drag': 'onDrag',
-      'node:dragend': 'onDragEnd',
-      'combo:dragenter': 'onDragEnter',
-      'combo:dragleave': 'onDragLeave',
-      'combo:drop': 'onDropCombo',
-      'node:drop': 'onDropNode',
-      'canvas:drop': 'onDropCanvas',
-      'node:touchstart': 'onTouchStart',
-      'node:touchmove': 'onTouchMove',
-      'node:touchend': 'onDragEnd',
+  onDragStart(this: any, e: IG6GraphEvent) {
+    const { item } = e;
+    if (!item || item.destroyed || item.getType() !== 'node') return;
+    
+    const graph: Graph = this.get("graph");
+    
+    const itemId = item.getID();
+    const originalModel = item.getModel()
+    const list: StoreListItem[] = [];
+
+    this.targets = [item];
+
+    graph.findAll("node", (nodeItem) => {
+      const model = nodeItem.getModel() as NodeConfig;
+      if (model.id === itemId) return false;
+      list.push({
+        model,
+        box: nodeItem.getBBox(),
+      });
+      return false;
+    });
+    const box = item.getBBox();
+    // offset x,y of item in container
+    const point = Util.invertMatrix(
+      { x: e.x, y: e.y },
+      item.getContainer().getMatrix()
+    );
+
+    graph.recursiveExec(item => {
+      graph.hideItem(item, false)
+    }, itemId)
+
+    this.dragData = {
+      list: _.cloneDeep(list),
+      box,
+      point,
+      originalModel
     };
-  },
-  validationCombo(item: ICombo) {
-    if (!this.origin || !item || item.destroyed) {
-      return false;
-    }
-
-    const type = item.getType();
-    if (type !== 'combo') {
-      return false;
-    }
-    return true;
-  },
-  onTouchStart(e: IG6GraphEvent) {
-    const self = this;
-    try {
-      const touches = (e.originalEvent as TouchEvent).touches;
-      const event1 = touches[0];
-      const event2 = touches[1];
-
-      if (event1 && event2) {
-        return;
-      }
-
-      e.preventDefault();
-    } catch (e) {
-      console.warn('Touch original event not exist!');
-    }
-    self.onDragStart(e);
-  },
-  onTouchMove(e: IG6GraphEvent) {
-    const self = this;
-    try {
-      const touches = (e.originalEvent as TouchEvent).touches;
-      const event1 = touches[0];
-      const event2 = touches[1];
-
-      if (event1 && event2) {
-        self.onDragEnd(e);
-        return;
-      }
-
-      e.preventDefault();
-    } catch (e) {
-      console.warn('Touch original event not exist!');
-    }
-    self.onDrag(e);
-  },
-  /**
-   * 开始拖动节点
-   * @param evt
-   */
-  onDragStart(evt: IG6GraphEvent) {
-    if (!this.shouldBegin.call(this, evt)) {
-      return;
-    }
-
-    const item: INode = evt.item as INode;
-    if (!item || item.destroyed || item.hasLocked()) {
-      return;
-    }
-
-    // 拖动时，设置拖动元素的 capture 为false，则不拾取拖动的元素
-    const group = item.getContainer();
-    group.set('capture', false);
-
-    // 如果拖动的target 是linkPoints / anchorPoints 则不允许拖动
-    const { target } = evt;
-    if (target) {
-      const isAnchorPoint = target.get('isAnchorPoint');
-      if (isAnchorPoint) {
-        return;
-      }
-    }
-
-    const { graph } = this;
-
-    this.targets = [];
-
-    // 将节点拖入到指定的 Combo
-    this.targetCombo = null;
-
-    // 获取所有选中的元素
-    const nodes = graph.findAllByState('node', this.selectedState);
-
-    const currentNodeId = item.get('id');
-
-    // 当前拖动的节点是否是选中的节点
-    const dragNodes = nodes.filter(node => {
-      const nodeId = node.get('id');
-      return currentNodeId === nodeId;
-    });
-
-    // 只拖动当前节点
-    if (dragNodes.length === 0) {
-      this.targets.push(item);
-    } else if (nodes.length > 1) {
-      // 拖动多个节点
-      nodes.forEach(node => {
-        const locked = node.hasLocked();
-        if (!locked) {
-          this.targets.push(node);
-        }
-      });
-    } else {
-      this.targets.push(item);
-    }
-    const beforeDragNodes = [];
-    this.targets.forEach(t => {
-      beforeDragNodes.push(clone(t.getModel()));
-    });
-    this.set('beforeDragNodes', beforeDragNodes);
-
-    this.hidenEdge = {};
-    if (this.get('updateEdge') && this.enableOptimize && !this.enableDelegate) {
-      this.targets.forEach(node => {
-        const edges = node.getEdges();
-        edges.forEach(edge => {
-          if (!edge.isVisible()) return;
-          this.hidenEdge[edge.getID()] = true;
-          edge.hide();
-        });
-      });
-    }
 
     this.origin = {
-      x: evt.x,
-      y: evt.y,
+      x: e.x,
+      y: e.y,
+    };
+  },
+  onDrag: function onDrag(this: any, e: IG6GraphEvent) {
+    if (!e.item || e.item.destroyed || e.item.getType() !== 'node') return;
+    const data: StoreData = this.dragData;
+    const { list, box, point } = data;
+    const itemLeftCenteredPoint = {
+      x: e.x - point.x,
+      y: e.y - point.y + box.height / 2,
     };
 
-    this.point = {};
-    this.originPoint = {};
+    const leftList = list.filter(
+      ({ box }) => box.x + box.width < itemLeftCenteredPoint.x
+    );
+    const lastDepth = _.maxBy(leftList, (item) => item.model.depth)?.model
+      .depth;
+    const lastDepthList = leftList.filter(
+      (item) => item.model.depth === lastDepth
+    );
+
+    const parent = getClosestItem(lastDepthList, itemLeftCenteredPoint);
+    const bottomSiblings = list.filter(
+      (item) => item.model.parentId === parent.model.id && item.box.y > e.y
+    );
+    const bottomSibling = getClosestItem(bottomSiblings, { x: e.x, y: e.y });
+    
+
+    this.dragData = { ...data, parent, bottomSibling };
+    
+    this.updatePlaceholder(e);
+    this.updateDelegate(e);
   },
+  onDragEnd: function onDragEnd(this: any) {
+    const graph: Graph = this.get("graph");
+    const { parent, bottomSibling, originalModel } = this.dragData;
+    if (!parent) return;
+    const command = graph.get("command");
 
-  /**
-   * 持续拖动节点
-   * @param evt
-   */
-  onDrag(evt: IG6GraphEvent) {
-    if (!this.origin) {
-      return;
-    }
-
-    if (!this.shouldUpdate(this, evt)) {
-      return;
-    }
-
-    if (this.get('enableDelegate')) {
-      this.updateDelegate(evt);
-    } else {
-      if (this.enableDebounce)
-        this.debounceUpdate({
-          targets: this.targets,
-          graph: this.graph,
-          point: this.point,
-          origin: this.origin,
-          evt,
-          updateEdge: this.get('updateEdge'),
-        });
-      else
-        this.targets.map(target => {
-          this.update(target, evt);
-        });
-    }
-  },
-  /**
-   * 拖动结束，设置拖动元素capture为true，更新元素位置，如果是拖动涉及到 combo，则更新 combo 结构
-   * @param evt
-   */
-  onDragEnd(evt: IG6GraphEvent) {
-    if (!this.origin || !this.shouldEnd.call(this, evt)) {
-      return;
-    }
-
-    // 拖动结束后，设置拖动元素 group 的 capture 为 true，允许拾取拖动元素
-    const item = evt.item as INode;
-    if (item) {
-      const group = item.getContainer();
-      group.set('capture', true);
-    }
+    command.execute("drag", {
+      id: originalModel.id,
+      model: originalModel,
+      newParentId: parent.model.id,
+      newNextId: bottomSibling?.model.id || null,
+    });
+    
 
     if (this.delegateRect) {
       this.delegateRect.remove();
       this.delegateRect = null;
     }
-
-    this.updatePositions(evt);
-    if (this.get('updateEdge') && this.enableOptimize && !this.enableDelegate) {
-      this.targets.forEach(node => {
-        const edges = node.getEdges();
-        edges.forEach(edge => {
-          if (this.hidenEdge[edge.getID()]) edge.show();
-          edge.refresh();
-        });
-      });
-    }
-    this.hidenEdge = {};
-
-    const graph: IGraph = this.graph;
-
-    // 拖动结束后，入栈
-    if (graph.get('enabledStack')) {
-      const stackData = {
-        before: { nodes: [], edges: [], combos: [] },
-        after: { nodes: [], edges: [], combos: [] },
-      };
-
-      this.get('beforeDragNodes').forEach(model => {
-        stackData.before.nodes.push({
-          id: model.id,
-          x: model.x,
-          y: model.y,
-        });
-      });
-
-      this.targets.forEach(target => {
-        const targetModel = target.getModel();
-        stackData.after.nodes.push({
-          id: targetModel.id,
-          x: targetModel.x,
-          y: targetModel.y,
-        });
-      });
-      graph.pushStack('update', clone(stackData));
-    }
-
-    // 拖动结束后emit事件，将当前操作的节点抛出去，目标节点为null
-    graph.emit('dragnodeend', {
-      items: this.targets,
-      targetItem: null,
-    });
-
-    this.point = {};
+    graph.removeChild(DELEGATE_PLACEHOLDER_ID)
     this.origin = null;
-    this.originPoint = {};
-    this.targets.length = 0;
-    this.targetCombo = null;
+    this.dragData = null;
+    this.lastPlaceholder = null;
+    
   },
-  /**
-   * 拖动过程中将节点放置到 combo 上
-   * @param evt
-   */
-  onDropCombo(evt: IG6GraphEvent) {
-    const item = evt.item as ICombo;
-    if (!this.validationCombo(item)) return;
-
-    this.updatePositions(evt);
-
-    const graph: IGraph = this.graph;
-
-    if (this.comboActiveState) {
-      graph.setItemState(item, this.comboActiveState, false);
-    }
-
-    this.targetCombo = item;
-
-    // 拖动结束后是动态改变 Combo 大小还是将节点从 Combo 中删除
-    if (this.onlyChangeComboSize) {
-      // 拖动节点结束后，动态改变 Combo 的大小
-      graph.updateCombos();
-    } else {
-      const targetComboModel = item.getModel();
-      this.targets.map((node: INode) => {
-        const nodeModel = node.getModel();
-        if (nodeModel.comboId !== targetComboModel.id) {
-          graph.updateComboTree(node, targetComboModel.id);
-        }
-      });
-      graph.updateCombo(item as ICombo);
-    }
-
-    // 将节点拖动到 combo 上面，emit事件抛出当前操作的节点及目标 combo
-    graph.emit('dragnodeend', {
-      items: this.targets,
-      targetItem: this.targetCombo,
-    });
-  },
-
-  onDropCanvas(evt: IG6GraphEvent) {
-    const graph: IGraph = this.graph;
-    if (!this.targets || this.targets.length === 0) return;
-    this.updatePositions(evt);
-    if (this.onlyChangeComboSize) {
-      // 拖动节点结束后，动态改变 Combo 的大小
-      graph.updateCombos();
-    } else {
-      this.targets.map((node: INode) => {
-        // 拖动的节点有 comboId，即是从其他 combo 中拖出时才处理
-        const model = node.getModel();
-        if (model.comboId) {
-          graph.updateComboTree(node);
-        }
-      });
-    }
-  },
-
-  /**
-   * 拖动放置到某个 combo 中的子 node 上
-   * @param evt
-   */
-  onDropNode(evt: IG6GraphEvent) {
-    if (!this.targets || this.targets.length === 0) return;
-    const self = this;
-    const item = evt.item as INode;
-    this.updatePositions(evt);
-    const graph: IGraph = self.graph;
-
-    const comboId = item.getModel().comboId as string;
-
-    if (comboId) {
-      if (this.onlyChangeComboSize) {
-        graph.updateCombos();
-      } else {
-        const combo = graph.findById(comboId);
-        if (self.comboActiveState) {
-          graph.setItemState(combo, self.comboActiveState, false);
-        }
-        this.targets.map((node: INode) => {
-          const nodeModel = node.getModel();
-          if (comboId !== nodeModel.comboId) {
-            graph.updateComboTree(node, comboId);
-          }
-        });
-        graph.updateCombo(combo as ICombo);
+  updatePlaceholder(this: any, e: IG6GraphEvent) {
+    if (!this.dragData) return;
+    
+    const { parent, bottomSibling } = this.dragData;
+    
+    if (this.lastPlaceholder) {
+      const { lastParentId, lastSiblingId } = this.lastPlaceholder; 
+      
+      if (parent.model.id === lastParentId && bottomSibling?.model.id === lastSiblingId) {
+        return;
       }
+    }
+    
+    const placeholderItem = {
+      id: DELEGATE_PLACEHOLDER_ID,
+      label: 'placeholder',
+      type: 'delegateNode',
+      children: []
+    };
+
+
+    const graph: Graph = this.graph;
+    graph.removeChild(DELEGATE_PLACEHOLDER_ID)
+
+    if (bottomSibling) {
+      // graph.insertBefore(bottomSibling.model.id, placeholderItem)
     } else {
-      this.targets.map((node: INode) => {
-        const model = node.getModel();
-        if (model.comboId) {
-          graph.updateComboTree(node);
-        }
-      });
+      graph.addChild(placeholderItem, parent.model.id)
     }
 
-    // 将节点拖动到另外个节点上面，emit 事件抛出当前操作的节点及目标节点
-    graph.emit('dragnodeend', {
-      items: this.targets,
-      targetItem: item,
-    });
+    this.lastPlaceholder = {
+      lastParentId: parent.model.id,
+      lastSiblingId: bottomSibling?.model.id
+    }
+
   },
-  /**
-   * 将节点拖入到 Combo 中
-   * @param evt
-   */
-  onDragEnter(evt: IG6GraphEvent) {
-    const item = evt.item as ICombo;
-    if (!this.validationCombo(item)) return;
-
-    const graph: IGraph = this.graph;
-    if (this.comboActiveState) {
-      graph.setItemState(item, this.comboActiveState, true);
-    }
-  },
-  /**
-   * 将节点从 Combo 中拖出
-   * @param evt
-   */
-  onDragLeave(evt: IG6GraphEvent) {
-    const item = evt.item as ICombo;
-    if (!this.validationCombo(item)) return;
-
-    const graph: IGraph = this.graph;
-    if (this.comboActiveState) {
-      graph.setItemState(item, this.comboActiveState, false);
-    }
-  },
-
-  updatePositions(evt: IG6GraphEvent) {
-    if (!this.targets || this.targets.length === 0) return;
-    // 当开启 delegate 时，拖动结束后需要更新所有已选中节点的位置
-    if (this.get('enableDelegate')) {
-      if (this.enableDebounce)
-        this.debounceUpdate({
-          targets: this.targets,
-          graph: this.graph,
-          point: this.point,
-          origin: this.origin,
-          evt,
-          updateEdge: this.get('updateEdge'),
-          updateFunc: this.update,
-        });
-      else this.targets.map(node => this.update(node, evt));
-    }
-  },
-  /**
-   * 更新节点
-   * @param item 拖动的节点实例
-   * @param evt
-   */
-  update(item: Item, evt: IG6GraphEvent) {
-    const { origin } = this;
-    const model: NodeConfig = item.get('model');
-    const nodeId: string = item.get('id');
-    if (!this.point[nodeId]) {
-      this.point[nodeId] = {
-        x: model.x || 0,
-        y: model.y || 0,
-      };
-    }
-
-    const x: number = evt.x - origin.x + this.point[nodeId].x;
-    const y: number = evt.y - origin.y + this.point[nodeId].y;
-
-    const pos: Point = { x, y };
-
-    if (this.get('updateEdge')) {
-      this.graph.updateItem(item, pos, false);
-    } else {
-      item.updatePosition(pos);
-    }
-  },
-
-  /**
-   * 限流更新节点
-   * @param item 拖动的节点实例
-   * @param evt
-   */
-  debounceUpdate: debounce(
-    event => {
-      const { targets, graph, point, origin, evt, updateEdge, updateFunc } = event;
-      targets.map(item => {
-        const model: NodeConfig = item.get('model');
-        const nodeId: string = item.get('id');
-        if (!point[nodeId]) {
-          point[nodeId] = {
-            x: model.x || 0,
-            y: model.y || 0,
-          };
-        }
-
-        const x: number = evt.x - origin.x + point[nodeId].x;
-        const y: number = evt.y - origin.y + point[nodeId].y;
-
-        const pos: Point = { x, y };
-
-        if (updateEdge) {
-          graph.updateItem(item, pos, false);
-        } else {
-          item.updatePosition(pos);
-        }
-      });
-    },
-    50,
-    true,
-  ),
-
-  /**
-   * 更新拖动元素时的delegate
-   * @param {Event} e 事件句柄
-   * @param {number} x 拖动单个元素时候的x坐标
-   * @param {number} y 拖动单个元素时候的y坐标
-   */
-  updateDelegate(e) {
+  updateDelegate(this: any, e: IG6GraphEvent) {
     const { graph } = this;
+    const parent = graph.get("group");
     if (!this.delegateRect) {
-      // 拖动多个
-      const parent = graph.get('group');
       const attrs = deepMix({}, Global.delegateStyle, this.delegateStyle);
-
-      const { x: cx, y: cy, width, height, minX, minY } = this.calculationGroupPosition(e);
+      const {
+        x: cx,
+        y: cy,
+        width,
+        height,
+        minX,
+        minY,
+      } = this.calculationGroupPosition(e);
       this.originPoint = { x: cx, y: cy, width, height, minX, minY };
-      // model上的x, y是相对于图形中心的，delegateShape是g实例，x,y是绝对坐标
-      this.delegateRect = parent.addShape('rect', {
+      this.delegateRect = parent.addShape("rect", {
         attrs: {
           width,
           height,
@@ -510,10 +204,10 @@ export default {
           y: cy,
           ...attrs,
         },
-        name: 'rect-delegate-shape',
+        name: "rect-delegate-shape",
       });
       this.delegate = this.delegateRect;
-      this.delegateRect.set('capture', false);
+      this.delegateRect.set("capture", false);
     } else {
       const clientX = e.x - this.origin.x + this.originPoint.minX;
       const clientY = e.y - this.origin.y + this.originPoint.minY;
@@ -523,15 +217,11 @@ export default {
       });
     }
   },
-  /**
-   * 计算delegate位置，包括左上角左边及宽度和高度
-   * @memberof ItemGroup
-   * @return {object} 计算出来的delegate坐标信息及宽高
-   */
   calculationGroupPosition(evt: IG6GraphEvent) {
-    const nodes = this.targets;
+    if (!evt.item) return;
+    const nodes = this.targets as INode[];
     if (nodes.length === 0) {
-      nodes.push(evt.item);
+      nodes.push(evt.item as INode);
     }
 
     let minx = Infinity;
@@ -576,3 +266,5 @@ export default {
     };
   },
 };
+
+export default DragNodeBehavior;
