@@ -1,11 +1,10 @@
-import { TreeGraphData } from "@antv/g6";
-import { ICommand } from "../types";
+import { TreeGraphData, ICommand } from "../types";
 import Graph from "../graph";
 
 export interface CutCommandParams {
   id: string;
   parentId: string;
-  model: TreeGraphData | null;
+  model: TreeGraphData;
 }
 
 class CutCommand implements ICommand<CutCommandParams> {
@@ -15,6 +14,7 @@ class CutCommand implements ICommand<CutCommandParams> {
   params = {
     id: "",
     parentId: "",
+    model: {},
   } as CutCommandParams;
 
   shortcuts = [
@@ -34,7 +34,7 @@ class CutCommand implements ICommand<CutCommandParams> {
     const { graph, params } = this;
     const model = params.model!;
     if (model.nextId) {
-      graph.keepMatrix(graph.insertBefore)(model!, model.nextId);
+      graph.keepMatrix(graph.insertBefore)(model, model.nextId);
     } else {
       graph.keepMatrix(graph.addChild)(model, model.parentId);
     }
@@ -56,7 +56,7 @@ class CutCommand implements ICommand<CutCommandParams> {
     this.params = {
       id,
       parentId: selectedNodes[0].getModel().parentId as string,
-      model: graph.findDataById(id),
+      model: graph.findDataById(id) as TreeGraphData,
     };
   }
 

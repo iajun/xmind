@@ -56,7 +56,7 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const item = graph.findById(sourceId)!;
     const id = v4();
     this.params.newId = id;
-    graph.keepMatrix(graph.addChild)({ id, label: "subTopic", parentId: sourceId, type: 'xmindNode', children: [] }, item)
+    graph.keepMatrix(graph.addChild)({ id, label: "subTopic", type: 'xmindNode', children: [] }, item)
     graph.setSelectedItems([graph.findById(id)])
   }
 }

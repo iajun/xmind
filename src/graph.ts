@@ -56,6 +56,7 @@ class Graph extends TreeGraph {
 
   addChild(data: TreeGraphData, parent: string | Item): void {
     const parentId = typeof parent === 'string' ? parent : parent.getID();
+    const parentItem = typeof parent ===  'string' ? this.findById(parent) : parent;
     const lastChild = this.findAll('node', item => {
       const model = item.getModel()
       return model.parentId === parentId && model.nextId === null;
@@ -65,6 +66,11 @@ class Graph extends TreeGraph {
         nextId: data.id
       });
     }
+    // unfold
+    parentItem.update({
+      collapsed: false
+    })
+    
     data.parentId = parentId;
     data.nextId = null;
     super.addChild(data, parent)

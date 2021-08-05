@@ -1,11 +1,10 @@
 import { v4 } from "uuid";
-import { ICommand } from "./../types";
+import { ICommand, TreeGraphData } from "./../types";
 import Graph from "../graph";
 
 export interface TopicCommandParams {
-  parentId: string;
+  originalModel: TreeGraphData,
   newId: string;
-  sourceId: string;
 }
 
 class TopicCommand implements ICommand<TopicCommandParams> {
@@ -13,8 +12,7 @@ class TopicCommand implements ICommand<TopicCommandParams> {
   name = "topic";
 
   params = {
-    parentId: "",
-    sourceId: '',
+    originalModel: {} as TreeGraphData,
     newId: "",
   };
 
@@ -30,9 +28,9 @@ class TopicCommand implements ICommand<TopicCommandParams> {
 
   undo(): void {
     const { graph, params } = this;
-    const { newId, sourceId } = params;
+    const { newId, originalModel } = params;
     graph.keepMatrix(graph.removeChild)(newId);
-    const item = graph.findById(sourceId);
+    const item = graph.findById(originalModel.id);
     graph.setSelectedItems([item])
   }
 
@@ -49,16 +47,19 @@ class TopicCommand implements ICommand<TopicCommandParams> {
   init() {
     const { graph } = this;
     const selectedNodes = graph.getSelectedNodes();
-    this.params.parentId = selectedNodes[0].getModel().parentId as string;
-    this.params.sourceId = selectedNodes[0].getID()
+    this.params.originalModel = selectedNodes[0].getModel() as TreeGraphData;
   }
 
   execute() {
     const { graph, params } = this;
-    const { parentId } = params;
-    const item = graph.findById(parentId)!;
+    const { originalModel } = params;
     const id = v4();
-    graph.keepMatrix(graph.addChild)({ id, label: "topic", parentId, type: 'xmindNode', children: [] }, item);
+    const newModel = { id, label: "topic", type: 'xmindNode', children: [] };
+    if (originalModel.nextId) {
+      graph.keepMatrix(graph.insertBefore)(newModel, originalModel.nextId)
+    } else {
+      graph.keepMatrix(graph.addChild)(newModel, graph.findById(originalModel.parentId));
+    }
     this.params.newId = id;
     graph.setSelectedItems([graph.findById(id)])
     this.graph.layout(false);
