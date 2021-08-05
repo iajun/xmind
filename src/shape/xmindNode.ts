@@ -1,7 +1,13 @@
-import G6, { IGroup, Util } from "@antv/g6";
+import G6, { IGroup, Item, ShapeOptions, Util } from "@antv/g6";
 import config from "../config";
 import { ItemState, NodeName } from "../constants";
-import { fittingLabelHeight, fittingLabelWidth, fittingString } from "../utils";
+import { TreeGraphData } from "../types";
+import {
+  fittingLabelHeight,
+  fittingLabelWidth,
+  fittingString,
+  getLabelByModel,
+} from "../utils";
 
 const PRIORITY_MAP = {
   1: {
@@ -19,26 +25,91 @@ const PRIORITY_MAP = {
 };
 
 const NODE_BOTTOM_LINE = "node-bottom-line";
+export const FOLD_BUTTON_GROUP = "node-fold-button";
 export const ACTIVE_STROKE = "#096DD9";
 
-const options = {
-  style: {
-    fill: "#fff",
-    lineWidth: 0,
-  },
-  stateStyles: {
-    [ItemState.Selected]: {
-      stroke: ACTIVE_STROKE,
+const drawFoldButton = (group: IGroup) => {
+  group.addShape("circle", {
+    attrs: {
+      x: 0,
+      y: 0,
+      r: 6,
+      fill: "#fff",
+      stroke: config.global.stroke,
       lineWidth: 1,
-      fill: "#E2F0FE",
     },
-  },
+  });
 };
 
-const SubNode = {
-  options,
-  additionalIconCount: 0,
-  setState(key, value, item) {
+const drawUnfoldButton = (group: IGroup, count: number) => {
+  group.addShape("circle", {
+    attrs: {
+      x: 0,
+      y: 0,
+      r: 6,
+      fill: "#fff",
+      stroke: config.global.stroke,
+      lineWidth: 1,
+    },
+  });
+  group.addShape("text", {
+    attrs: {
+      text: `${count}`,
+      fill: "#000",
+      x: 0,
+      y: 0,
+      fontSize: 8,
+      textBaseline: "middle",
+      textAlign: "center",
+    },
+  });
+};
+
+const BaseXMindNode: ShapeOptions = {
+  options: {
+    style: {
+      fill: "#fff",
+      lineWidth: 0,
+    },
+    stateStyles: {
+      [ItemState.Selected]: {
+        stroke: ACTIVE_STROKE,
+        lineWidth: 1,
+        fill: "#E2F0FE",
+      },
+    },
+  },
+  hasButton(model: TreeGraphData) {
+    return model.children.length;
+  },
+  drawButton(model: TreeGraphData, group: IGroup) {
+    const items = group.findAllByName(FOLD_BUTTON_GROUP);
+
+    items.forEach((item) => group.removeChild(item, true));
+    const buttonGroup = group.addGroup({
+      name: FOLD_BUTTON_GROUP,
+    });
+    const { collapsed } = model;
+    if (collapsed) {
+      let len = -1;
+      Util.traverseTree(model, () => len++);
+      drawUnfoldButton(buttonGroup, len);
+    } else {
+      drawFoldButton(buttonGroup);
+    }
+    const [width, height] = this.getSize!(model);
+
+    buttonGroup.translate(width, height);
+  },
+  afterUpdate(model: any, item) {
+    if (!this.hasButton(model)) return;
+    const container = item?.getContainer();
+    if (!container) return;
+
+    this.drawButton(model, container);
+  },
+  setState(key?: string, value?: string | boolean, item?: Item) {
+    if (!item) return;
     const keyShape = item.getKeyShape();
     const group: IGroup = item.getContainer();
     const path = group.findAllByName(NODE_BOTTOM_LINE)[0];
@@ -57,11 +128,12 @@ const SubNode = {
       }
     }
   },
-  draw(cfg, group: IGroup) {
+  draw(cfg, group) {
+    if (!cfg || !group) return;
     const { fontSize, maxLabelWidth, padding, lineHeight, minWidth } =
-      config.subNode;
+      config.xmindNode;
     const formattedPadding = Util.formatPadding(padding);
-    const label = fittingString(cfg.label, maxLabelWidth, fontSize);
+    const label = fittingString(getLabelByModel(cfg), maxLabelWidth, fontSize);
 
     let textWidth = Math.max(fittingLabelWidth(label, fontSize), minWidth);
     if (textWidth + fontSize >= maxLabelWidth) {
@@ -69,7 +141,7 @@ const SubNode = {
     }
 
     const textHeight = fittingLabelHeight(label, lineHeight);
-    const [width, height] = this.getSize(cfg);
+    const [width, height] = this.getSize!(cfg);
 
     const keyShape = group.addShape("rect", {
       draggable: true,
@@ -140,14 +212,17 @@ const SubNode = {
       },
     });
 
+    if (!this.hasButton(cfg)) return keyShape;
+    this.drawButton(cfg, group);
+
     return keyShape;
   },
   getSize(cfg) {
     const { fontSize, maxLabelWidth, padding, lineHeight, minWidth } =
-      config.subNode;
+      config.xmindNode;
 
     const formattedPadding = Util.formatPadding(padding);
-    const label = fittingString(cfg.label, maxLabelWidth, fontSize);
+    const label = fittingString(getLabelByModel(cfg), maxLabelWidth, fontSize);
 
     const textWidth = Math.max(fittingLabelWidth(label, fontSize), minWidth);
     const width =
@@ -169,7 +244,6 @@ const SubNode = {
   },
 };
 
-G6.registerNode("subNode", SubNode);
-G6.registerNode("leafNode", SubNode);
+G6.registerNode("xmindNode", BaseXMindNode);
 
-export default SubNode;
+export default BaseXMindNode;

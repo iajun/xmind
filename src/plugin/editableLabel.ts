@@ -1,5 +1,10 @@
 import { IElement } from "@antv/g-base";
-import { GraphNodeEvent, ItemState, NodeName } from "./../constants";
+import {
+  GraphCommonEvent,
+  GraphNodeEvent,
+  ItemState,
+  NodeName,
+} from "./../constants";
 import "./style.css";
 import { modifyCSS, createDom } from "@antv/dom-util";
 import { Item } from "@antv/g6-core";
@@ -9,6 +14,11 @@ import config from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
 
+type EditableLabelConfig = {
+  key: string;
+  shouldBegin?: (item: INode) => boolean;
+}
+
 export default class EditableLabel extends Base {
   private editorEl!: HTMLDivElement;
   private wrapperEl!: HTMLDivElement;
@@ -17,15 +27,31 @@ export default class EditableLabel extends Base {
   private item?: INode | null;
   private originalLabel: string = "";
 
+  getDefaultCfgs() {
+    return {
+      key: ' ',
+      shouldBegin() {
+        return true;
+      }
+    } as EditableLabelConfig;
+  }
+
   public getEvents() {
     return {
       [GraphNodeEvent.onNodeDoubleClick]: "onNodeDoubleClick",
+      [GraphCommonEvent.onKeyUp]: "onKeyUp",
     };
   }
 
   onNodeDoubleClick(e: IG6GraphEvent) {
     if (!e.item) return;
-    this.onShow(e.item as INode)
+    this.onShow(e.item as INode);
+  }
+
+  onKeyUp(e: IG6GraphEvent) {
+    const selectedNode = this.graph.getSelectedNodes()[0];
+    if (!selectedNode || selectedNode.hasState(ItemState.Editing) || this.get('key') !== e.key) return;
+    this.onShow(selectedNode);
   }
 
   private getLabelShape(target: Item): IElement | null {
@@ -48,11 +74,11 @@ export default class EditableLabel extends Base {
 
     modifyCSS(this.wrapperEl, {
       visibility: "hidden",
-      minWidth: `${config.subNode.minWidth}px`,
+      minWidth: `${config.xmindNode.minWidth}px`,
     });
 
     modifyCSS(this.editorEl, {
-      "max-width": `${config.subNode.maxLabelWidth}px`,
+      "max-width": `${config.xmindNode.maxLabelWidth}px`,
     });
 
     this.container.appendChild(this.wrapperEl);
@@ -97,7 +123,7 @@ export default class EditableLabel extends Base {
 
     const lineHeight = labelShape.attr("lineHeight");
     modifyCSS(this.editorEl, {
-      "max-width": `${config.subNode.maxLabelWidth}px`,
+      "max-width": `${config.xmindNode.maxLabelWidth}px`,
       height: "auto",
       "line-height": `${lineHeight}px`,
     });
@@ -125,7 +151,7 @@ export default class EditableLabel extends Base {
     modifyCSS(this.wrapperEl, {
       font,
       transform: `matrix(${matrixString})`,
-      padding: Util.formatPadding(config.subNode.padding)
+      padding: Util.formatPadding(config.xmindNode.padding)
         .map((n: number) => `${n}px`)
         .join(" "),
     });
@@ -150,9 +176,11 @@ export default class EditableLabel extends Base {
   }
 
   private onShow(item: INode) {
+    const shouldBegin = this.get('shouldBegin');
+    if (!shouldBegin(item)) return;
     this.item = item;
 
-    item.setState(ItemState.Editing, true)
+    item.setState(ItemState.Editing, true);
 
     const labelShape = this.getLabelShape(item);
     if (!labelShape) return;
@@ -176,19 +204,22 @@ export default class EditableLabel extends Base {
 
     this.unbindAllListeners();
 
-      this.bindListener(
-        "inputBlur",
-        this.editorEl,
-        "blur",
-        this.onBlur.bind(this)
-      );
+    this.editorEl.focus();
+    document.execCommand("selectAll", false);
 
-      this.bindListener(
-        "outerClick",
-        document,
-        "click",
-        this.outerClick.bind(this)
-      );
+    this.bindListener(
+      "inputBlur",
+      this.editorEl,
+      "blur",
+      this.onBlur.bind(this)
+    );
+
+    this.bindListener(
+      "outerClick",
+      document,
+      "click",
+      this.outerClick.bind(this)
+    );
   }
 
   private outerClick(e) {
@@ -202,7 +233,7 @@ export default class EditableLabel extends Base {
     if (!this.item) return;
     this.unbindAllListeners();
 
-    this.item.setState(ItemState.Editing, false)
+    this.item.setState(ItemState.Editing, false);
     this.graph.off("wheel", this.adjustPosition);
     modifyCSS(this.wrapperEl, {
       visibility: "hidden",

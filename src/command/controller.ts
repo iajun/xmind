@@ -1,7 +1,6 @@
 import { ItemState, RendererType } from "./../constants";
 import Graph from "../graph";
 import CommandManager from "./manager";
-import createCommandManager from "./create-manager";
 import { GraphCommonEvent } from "../constants";
 import _ from "lodash";
 
@@ -10,9 +9,9 @@ class CommandController {
   private manager: CommandManager;
   private lastMouseDownTarget: HTMLElement | null;
 
-  constructor(graph: Graph) {
+  constructor(graph: Graph, manager: CommandManager) {
     this.graph = graph;
-    this.manager = createCommandManager(graph);
+    this.manager = manager;
     this.lastMouseDownTarget = null;
     this.bind();
   }

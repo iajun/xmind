@@ -1,34 +1,84 @@
-import { GraphState, ItemState } from "./constants";
-import { GraphData, IEdge, INode, TreeGraph, TreeGraphData, Util } from "@antv/g6";
+import { ItemState } from "./constants";
+import {
+  IEdge,
+  INode,
+  TreeGraph,
+  TreeGraphData,
+  Util,
+} from "@antv/g6";
 import { Item } from "./types";
 import _ from "lodash";
 
 class Graph extends TreeGraph {
-  static Event = {
-    /** 调用命令之前触发 */
-    onBeforeExecuteCommand : "onBeforeExecuteCommand",
-    /** 调用命令之后触发 */
-    onAfterExecuteCommand : "onAfterExecuteCommand",
-    /** 改变画面状态触发 */
-    onGraphStateChange : "onGraphStateChange",
-    /** 改变标签状态触发 */
-    onLabelStateChange : "onLabelStateChange",
-  };
-
   isRootNode(item: string) {
-    const rootNode = this.get('data');
-    if (!rootNode) return false
-    return rootNode.id === item
+    const rootNode = this.get("data");
+    if (!rootNode) return false;
+    return rootNode.id === item;
   }
 
   keepMatrix<Args extends any[], Result>(fn: (...args: Args) => Result) {
-    const matrix = this.getGroup().getMatrix()
+    const matrix = this.getGroup().getMatrix();
     const context = this;
-    return function(...args: Args): Result {
-      const result = fn.apply(context, args)
-      context.getGroup().setMatrix(matrix)
+    return function (...args: Args): Result {
+      const result = fn.apply(context, args);
+      context.getGroup().setMatrix(matrix);
       return result;
+    };
+  }
+
+  insertBefore(model: TreeGraphData, id: string | Item) {
+    const graphData: TreeGraphData = _.cloneDeep(this.get("data"));
+    const item: Item = typeof id === "string" ? this.findById(id) : id;
+    
+    const nextSiblingModel = item.getModel();
+
+    let isValid = false
+
+    Util.traverseTree(graphData, (item: TreeGraphData) => {
+      if (item.id === nextSiblingModel.parentId) {
+        if (!item.children) return;
+        const idx = item.children.findIndex(
+          (item) => item.id === nextSiblingModel.id
+        );
+        isValid = true;
+
+        model.nextId = nextSiblingModel.id;
+        model.parentId = nextSiblingModel.parentId;
+        
+        item.children[idx - 1] && (item.children[idx - 1].nextId = model.id);
+        item.children.splice(idx, 0, model);
+      }
+    });
+    if (isValid) {
+      this.changeData(graphData);
     }
+  }
+
+  addChild(data: TreeGraphData, parent: string | Item): void {
+    const parentId = typeof parent === 'string' ? parent : parent.getID();
+    const lastChild = this.findAll('node', item => {
+      const model = item.getModel()
+      return model.parentId === parentId && model.nextId === null;
+    })[0]
+    if (lastChild) {
+      lastChild.update({
+        nextId: data.id
+      });
+    }
+    data.parentId = parentId;
+    data.nextId = null;
+    super.addChild(data, parent)
+  }
+
+  removeChild(id: string): void {
+    const model = this.findById(id).getModel();
+    const lastSibling = this.findAll('node' ,item => item.getModel().nextId === id)[0]
+    if (lastSibling) {
+      lastSibling.update({
+        nextId: model.nextId
+      })
+    }
+    super.removeChild(id)
   }
 
   /** 获取选中节点 */
@@ -53,34 +103,6 @@ class Graph extends TreeGraph {
     this.setAutoPaint(autoPaint);
   }
 
-  private emitStateChange() {
-    this.emit(Graph.Event.onGraphStateChange, {
-      graphState: this.getGraphState(),
-    });
-  }
-
-  /** 获取图表选中类型状态 */
-  private getGraphState(): GraphState {
-    let graphState: GraphState = GraphState.MultiSelected;
-
-    const selectedNodes = this.getSelectedNodes();
-    const selectedEdges = this.getSelectedEdges();
-
-    if (selectedNodes.length === 1 && !selectedEdges.length) {
-      graphState = GraphState.NodeSelected;
-    }
-
-    if (selectedEdges.length === 1 && !selectedNodes.length) {
-      graphState = GraphState.EdgeSelected;
-    }
-
-    if (!selectedNodes.length && !selectedEdges.length) {
-      graphState = GraphState.CanvasSelected;
-    }
-
-    return graphState;
-  }
-
   /** 设置节点和边的选中 */
   setSelectedItems(items: Item[] | string[]) {
     this.executeBatch(() => {
@@ -95,44 +117,20 @@ class Graph extends TreeGraph {
         this.setItemState(item, ItemState.Selected, true);
       });
     });
-    this.emitStateChange()
-
   }
 
   clearSelectedState(shouldUpdate: (item: Item) => boolean = () => true) {
     const selectedNodes = this.getSelectedNodes();
     const selectedEdges = this.getSelectedEdges();
-  
+
     this.executeBatch(() => {
-      [...selectedNodes, ...selectedEdges].forEach(item => {
+      [...selectedNodes, ...selectedEdges].forEach((item) => {
         if (shouldUpdate(item)) {
           this.setItemState(item, ItemState.Selected, false);
         }
       });
     });
 
-    this.emitStateChange()
-  }
-
-  recursiveExec(updateFunc: (item: Item) => void, startId?: string) {
-    const ids: string[] =  [];
-    startId && ids.push(startId)
-    Util.traverseTree(this.get('data') ,item => {
-      if (startId) {
-        if (ids.includes(item.parentId)) {
-          ids.push(item.id)
-        }
-      } else {
-        ids.push(item.id)
-      }
-    })
-    
-    this.executeBatch(() => {
-      ids.forEach(id => {
-        const item = this.findById(id);
-        updateFunc(item)
-      })
-    })
   }
 }
 

@@ -1,4 +1,4 @@
-import { ICommand, ModelNode } from "./../types";
+import { ICommand, TreeGraphData } from "./../types";
 import Graph from "../graph";
 
 export interface FoldCommandParams {
@@ -37,7 +37,7 @@ class FoldCommand implements ICommand<FoldCommandParams> {
 
     const selectedNode = selectedNodes[0];
 
-    const model = selectedNode.getModel() as ModelNode;
+    const model = selectedNode.getModel() as TreeGraphData;
 
     if (!model.collapsed || !model.children) return false;
 

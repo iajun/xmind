@@ -1,11 +1,11 @@
-import { ICommand, ModelNode } from "./../types";
+import { ICommand, TreeGraphData } from "./../types";
 import Graph from "../graph";
 import _ from "lodash";
 
 export interface UpdateCommandParams {
   id: string;
-  originalModel: Partial<ModelNode>;
-  updateModel: Partial<ModelNode>;
+  originalModel: Partial<TreeGraphData>;
+  updateModel: Partial<TreeGraphData>;
   forceLayout: Boolean;
 }
 

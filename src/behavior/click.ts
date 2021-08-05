@@ -1,4 +1,3 @@
-import { NodeName } from './../constants';
 import { BehaviorOption } from '@antv/g6';
 import { ItemState } from '../constants';
 import Graph from '../graph';
@@ -19,7 +18,7 @@ const ClickItemBehavior: BehaviorOption  = {
     };
   },
 
-  handleItemClick({ item, target }: {item: Item}) {
+  handleItemClick({ item }: {item: Item}) {
     const graph = this.graph as Graph;
 
     const isSelected = item.hasState(ItemState.Selected);

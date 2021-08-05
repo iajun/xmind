@@ -1,4 +1,4 @@
-import { ModelNode, Node, NodeType } from "./types";
+import { ModelNode, Node } from "./types";
 import _ from "lodash";
 
 const NO_ID = "__NO_ID__";

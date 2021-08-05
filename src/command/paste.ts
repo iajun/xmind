@@ -1,4 +1,4 @@
-import { ICommand, ModelNode } from "../types";
+import { ICommand, TreeGraphData } from "../types";
 import Graph from "../graph";
 import { Util } from "@antv/g6";
 import {v4} from 'uuid'
@@ -61,7 +61,7 @@ class PasteCommand implements ICommand<PasteCommandParams> {
     const { targetId} = params
     const model =  _.cloneDeep(graph.get('clipboard')?.model)
     if (!model || !model.id) return;
-    Util.traverseTree(model, (item: ModelNode) => {
+    Util.traverseTree(model, (item: TreeGraphData) => {
       item.id = v4()
     })
     this.params.newRootId = model.id;

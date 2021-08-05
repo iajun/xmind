@@ -15,8 +15,8 @@ class CommandManager {
   }
 
   /** 注册命令 */
-  register(name: string, command: ICommand) {
-    this.command[name] = command;
+  register(command: ICommand) {
+    this.command[command.name] = command;
   }
 
   /** 执行命令 */

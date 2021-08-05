@@ -9,7 +9,6 @@ import G6, {
 } from "@antv/g6";
 import _ from "lodash";
 import { ItemState, EditorEvent, GraphState } from "./constants";
-import { ModelNode } from "./types";
 const { Util } = G6;
 
 const isTextWrap = (str: string) => str === "\n";
@@ -136,12 +135,4 @@ export const getLabelByModel = (
 export const isLabelEqual = (t1: string, t2: string) => {
   const mapText = (t: string) => t.trim();
   return _.isEqual(t1.split("\n").map(mapText), t2.split("\n").map(mapText));
-};
-
-export const treeToList = (tree: ModelNode[]) => {
-  const arr: ModelNode[] = [];
-  Util.traverseTree(tree, (item) => {
-    arr.push(item);
-  });
-  return arr.map(({ children, ...rest }) => rest);
 };

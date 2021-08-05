@@ -1,4 +1,4 @@
-import { IEdge, INode } from "@antv/g6";
+import { IEdge, INode, TreeGraphData as ITreeGraphData } from "@antv/g6";
 
 export type Node = {
   id: string;
@@ -8,14 +8,14 @@ export type Node = {
   [key: string]: any;
 };
 
-export type ModelNode = Node & {
+export type TreeGraphData = ITreeGraphData & {
   type: NodeType;
-  children: Node[];
-  level: number;
-  collapsed?: boolean;
+  children: TreeGraphData[];
+  nextId: string | null;
+  parentId: string | null
 };
 
-export type NodeType = "rootNode" | "subNode" | "leafNode";
+export type NodeType = "rootNode" | "xmindNode";
 
 export interface ICommand<P = object> {
   /** 命令名称 */
@@ -39,3 +39,8 @@ export interface ICommand<P = object> {
 export type ItemType = "node" | "edge";
 
 export type Item = INode | IEdge;
+
+export type Global = {
+  stroke: string,
+  lineWidth: number
+}

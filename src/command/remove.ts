@@ -1,25 +1,21 @@
-import { ICommand, ModelNode } from "../types";
+import { ICommand, TreeGraphData } from "../types";
 import Graph from "../graph";
-import { TreeGraphData, Util } from "@antv/g6";
-import {v4} from 'uuid'
-import _ from "lodash";
 
 export interface RemoveCommandParams {
-    id: string,
+  id: string;
+  originalModel: TreeGraphData;
 }
 
 class RemoveCommand implements ICommand<RemoveCommandParams> {
   private graph: Graph;
-  name = "paste";
+  name = "remove";
 
   params = {
     id: "",
+    originalModel: {} as TreeGraphData,
   };
 
-  shortcuts = [
-    ["metaKey", "v"],
-    ["ctrlKey", "v"],
-  ];
+  shortcuts = ["Backspace"];
 
   constructor(graph: Graph) {
     this.graph = graph;
@@ -30,38 +26,40 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
   }
 
   undo(): void {
-    this.execute();
+    const { graph, params } = this;
+    const { originalModel } = params;
+    if (originalModel.nextId) {
+      graph.keepMatrix(graph.insertBefore)(originalModel, originalModel.nextId);
+    } else if (originalModel.parentId) {
+      graph.keepMatrix(graph.addChild)(originalModel, originalModel.parentId);
+    }
+    graph.setSelectedItems([graph.findById(originalModel.id)]);
   }
 
   canExecute(): boolean {
     const { graph } = this;
+
     const selectedNodes = graph.getSelectedNodes();
-    if (selectedNodes.length !== 1) {
-      return false;
-    } 
-    const id =  graph.get('clipboard')?.id
-    return !!id
+    if (selectedNodes.length !== 1) return false;
+    const selectedNode = selectedNodes[0];
+
+    return !graph.isRootNode(selectedNode.getID());
   }
 
   init() {
     const { graph } = this;
-    const sourceId =  graph.get('clipboard')?.id
-    const selectedNode = graph.getSelectedNodes()[0];
-    this.params = {
-      sourceId,
-      targetId: selectedNode.getID()
-    };
+    const selectedNodes = graph.getSelectedNodes();
+    const model = (this.params.originalModel =
+      selectedNodes[0].getModel() as TreeGraphData);
+    this.params.id = model.id;
   }
 
   execute() {
     const { graph, params } = this;
-    const {sourceId, targetId} = params
-    const model = _.cloneDeep(graph.findDataById(sourceId));
-    if (!model) return;
-    Util.traverseTree(model, (item: ModelNode) => {
-      item.id = v4()
-    })
-    graph.addChild(model, targetId)
+    const { id, originalModel } = params;
+    graph.keepMatrix(graph.removeChild)(id);
+    originalModel.parentId &&
+      graph.setSelectedItems([graph.findById(originalModel.parentId)]);
   }
 }
 
