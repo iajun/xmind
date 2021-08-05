@@ -9,21 +9,6 @@ import {
   getLabelByModel,
 } from "../utils";
 
-const PRIORITY_MAP = {
-  1: {
-    text: "\ue659",
-    fill: "#FF1403",
-  },
-  2: {
-    text: "\ue658",
-    fill: "#0274FF",
-  },
-  3: {
-    text: "\ue657",
-    fill: "#06AF00",
-  },
-};
-
 const NODE_BOTTOM_LINE = "node-bottom-line";
 export const FOLD_BUTTON_GROUP = "node-fold-button";
 export const ACTIVE_STROKE = "#096DD9";
@@ -79,9 +64,11 @@ const BaseXMindNode: ShapeOptions = {
       },
     },
   },
+
   hasButton(model: TreeGraphData) {
     return model.children.length;
   },
+
   drawButton(model: TreeGraphData, group: IGroup) {
     const items = group.findAllByName(FOLD_BUTTON_GROUP);
 
@@ -101,6 +88,7 @@ const BaseXMindNode: ShapeOptions = {
 
     buttonGroup.translate(width, height);
   },
+
   afterUpdate(model: any, item) {
     if (!this.hasButton(model)) return;
     const container = item?.getContainer();
@@ -108,6 +96,7 @@ const BaseXMindNode: ShapeOptions = {
 
     this.drawButton(model, container);
   },
+
   setState(key?: string, value?: string | boolean, item?: Item) {
     if (!item) return;
     const keyShape = item.getKeyShape();
@@ -129,7 +118,6 @@ const BaseXMindNode: ShapeOptions = {
     }
   },
   draw(cfg, group) {
-    if (!cfg || !group) return;
     const { fontSize, maxLabelWidth, padding, lineHeight, minWidth } =
       config.xmindNode;
     const formattedPadding = Util.formatPadding(padding);
@@ -151,37 +139,6 @@ const BaseXMindNode: ShapeOptions = {
         radius: 4,
       },
     });
-
-    if (cfg.priority && PRIORITY_MAP[cfg.priority]) {
-      group.addShape("text", {
-        attrs: {
-          x: formattedPadding[3],
-          y: -formattedPadding[1],
-          fontFamily: "iconfont",
-          textAlign: "center",
-          textBaseline: "middle",
-          fontSize: fontSize * 1.5,
-          ...PRIORITY_MAP[cfg.priority],
-        },
-      });
-    }
-
-    if (cfg.remark) {
-      group.addShape("text", {
-        name: NodeName.Remark,
-        attrs: {
-          x: fontSize * 1.5 + formattedPadding[3],
-          y: -formattedPadding[1],
-          fontFamily: "iconfont",
-          textAlign: "center",
-          textBaseline: "middle",
-          fontSize,
-          text: "\ue63d",
-          fill: "#333",
-          cursor: "pointer",
-        },
-      });
-    }
 
     group.addShape("text", {
       draggable: true,

@@ -10,7 +10,6 @@ import PasteCommand from "./paste";
 import CutCommand from "./cut";
 import TopicCommand from "./topic";
 import SubTopicCommand from "./subTopic";
-import DragCommand from "./drag";
 import DeleteCommand from "./remove";
 import Graph from "../graph";
 
@@ -25,7 +24,6 @@ const commands = {
   CutCommand,
   TopicCommand,
   SubTopicCommand,
-  DragCommand,
   DeleteCommand,
 };
 
@@ -43,7 +41,6 @@ function createCommandManager(graph: Graph, keys?: string[]) {
     new CutCommand(graph),
     new TopicCommand(graph),
     new SubTopicCommand(graph),
-    new DragCommand(graph),
     new DeleteCommand(graph),
   ];
   if (keys) {
