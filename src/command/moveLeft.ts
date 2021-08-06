@@ -25,11 +25,10 @@ class MoveLeftCommand implements ICommand<MoveLeftCommandParams> {
   }
 
   canUndo(): boolean {
-    return true;
+    return false;
   }
 
   undo(): void {
-    this.execute();
   }
 
   canExecute(): boolean {

@@ -25,11 +25,10 @@ class MoveDownCommand implements ICommand<MoveDownCommandParams> {
   }
 
   canUndo(): boolean {
-    return true;
+    return false;
   }
 
   undo(): void {
-    this.execute();
   }
 
   canExecute(): boolean {

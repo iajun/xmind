@@ -25,11 +25,10 @@ class MoveUpCommand implements ICommand<MoveUpCommandParams> {
   }
 
   canUndo(): boolean {
-    return true;
+    return false;
   }
 
   undo(): void {
-    this.execute();
   }
 
   canExecute(): boolean {
