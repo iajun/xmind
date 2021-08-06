@@ -34,9 +34,9 @@ class CutCommand implements ICommand<CutCommandParams> {
     const { graph, params } = this;
     const model = params.model!;
     if (model.nextId) {
-      graph.keepMatrix(graph.insertBefore)(model, model.nextId);
+      graph.insertBefore(model, model.nextId);
     } else {
-      graph.keepMatrix(graph.addChild)(model, model.parentId);
+      graph.addChild(model, model.parentId);
     }
   }
 
@@ -64,7 +64,7 @@ class CutCommand implements ICommand<CutCommandParams> {
     const { graph, params } = this;
     const { id, model } = params;
     graph.set("clipboard", { id, model });
-    graph.keepMatrix(graph.removeChild)(id);
+    graph.removeChild(id);
   }
 }
 

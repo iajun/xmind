@@ -23,7 +23,6 @@ function getDefaultOptions(): IGraphOptions {
     container: '' ,
       enabledStack: false,
       animate: false,
-      fitCenter: true,
       fitViewPadding: [10, 20],
       layout: {
         type: "mindmap",
@@ -104,8 +103,5 @@ export function createGraph(options: GraphOptions) {
   commandManager = createCommandManager(graph, commands);
   graph.set("command", commandManager);
   graph.changeData(data)
-  if (data?.id) {
-    graph.focusItem(data.id)
-  }
   return graph;
 }

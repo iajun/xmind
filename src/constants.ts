@@ -24,6 +24,7 @@ export enum EditorEvent {
   /** 改变画面状态触发 */
   onGraphStateChange = 'onGraphStateChange',
   /** 改变标签状态触发 */
+  onBeforeDestroy = 'onBeforeDestroy'
 }
 
 export enum GraphState {

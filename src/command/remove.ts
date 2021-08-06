@@ -29,9 +29,9 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
     const { graph, params } = this;
     const { originalModel } = params;
     if (originalModel.nextId) {
-      graph.keepMatrix(graph.insertBefore)(originalModel, originalModel.nextId);
+      graph.insertBefore(originalModel, originalModel.nextId);
     } else if (originalModel.parentId) {
-      graph.keepMatrix(graph.addChild)(originalModel, originalModel.parentId);
+      graph.addChild(originalModel, originalModel.parentId);
     }
     graph.setSelectedItems([originalModel.id]);
   }
@@ -57,7 +57,7 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
   execute() {
     const { graph, params } = this;
     const { id, originalModel } = params;
-    graph.keepMatrix(graph.removeChild)(id);
+    graph.removeChild(id);
     originalModel.parentId &&
       graph.setSelectedItems([originalModel.parentId]);
   }

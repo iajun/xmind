@@ -10,7 +10,7 @@ export type Node = {
 
 export type TreeGraphData = ITreeGraphData & {
   type: NodeType;
-  children: TreeGraphData[];
+  children?: TreeGraphData[];
   nextId: string | null;
   parentId: string | null
 };

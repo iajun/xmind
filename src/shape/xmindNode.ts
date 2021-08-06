@@ -66,7 +66,7 @@ const BaseXMindNode: ShapeOptions = {
   },
 
   hasButton(model: TreeGraphData) {
-    return model.children.length;
+    return model.children && model.children.length;
   },
 
   drawButton(model: TreeGraphData, group: IGroup) {

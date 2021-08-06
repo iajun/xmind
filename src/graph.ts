@@ -1,11 +1,5 @@
-import { ItemState } from "./constants";
-import {
-  IEdge,
-  INode,
-  TreeGraph,
-  TreeGraphData,
-  Util,
-} from "@antv/g6";
+import { EditorEvent, ItemState } from "./constants";
+import { IEdge, INode, TreeGraph, TreeGraphData, Util } from "@antv/g6";
 import { Item } from "./types";
 import _ from "lodash";
 
@@ -14,6 +8,11 @@ class Graph extends TreeGraph {
     const rootNode = this.get("data");
     if (!rootNode) return false;
     return rootNode.id === item;
+  }
+
+  destroy() {
+    this.emit(EditorEvent.onBeforeDestroy, this);
+    super.destroy();
   }
 
   keepMatrix<Args extends any[], Result>(fn: (...args: Args) => Result) {
@@ -27,16 +26,16 @@ class Graph extends TreeGraph {
   }
 
   getLastSibling(id: string) {
-    return this.findAll('node' ,item => item.getModel().nextId === id)[0]
+    return this.findAll("node", (item) => item.getModel().nextId === id)[0];
   }
 
   insertBefore(model: TreeGraphData, id: string | Item) {
     const graphData: TreeGraphData = _.cloneDeep(this.get("data"));
     const item: Item = typeof id === "string" ? this.findById(id) : id;
-    
+
     const nextSiblingModel = item.getModel();
 
-    let isValid = false
+    let isValid = false;
 
     Util.traverseTree(graphData, (item: TreeGraphData) => {
       if (item.id === nextSiblingModel.parentId) {
@@ -48,47 +47,54 @@ class Graph extends TreeGraph {
 
         model.nextId = nextSiblingModel.id;
         model.parentId = nextSiblingModel.parentId;
-        
+
         item.children[idx - 1] && (item.children[idx - 1].nextId = model.id);
         item.children.splice(idx, 0, model);
       }
     });
+
     if (isValid) {
-      this.changeData(graphData);
+      this.keepMatrix(() => {
+        this.changeData(graphData);
+      });
     }
   }
 
   addChild(data: TreeGraphData, parent: string | Item): void {
-    const parentId = typeof parent === 'string' ? parent : parent.getID();
-    const parentItem = typeof parent ===  'string' ? this.findById(parent) : parent;
-    const lastChild = this.findAll('node', item => {
-      const model = item.getModel()
+    const parentId = typeof parent === "string" ? parent : parent.getID();
+    const parentItem =
+      typeof parent === "string" ? this.findById(parent) : parent;
+    const lastChild = this.findAll("node", (item) => {
+      const model = item.getModel();
       return model.parentId === parentId && model.nextId === null;
-    })[0]
+    })[0];
     if (lastChild) {
       lastChild.update({
-        nextId: data.id
+        nextId: data.id,
       });
     }
     // unfold
     parentItem.update({
-      collapsed: false
-    })
-    
+      collapsed: false,
+    });
+
     data.parentId = parentId;
     data.nextId = null;
-    super.addChild(data, parent)
+    this.keepMatrix(super.addChild)(data, parent);
   }
 
   removeChild(id: string): void {
     const model = this.findById(id).getModel();
-    const lastSibling = this.findAll('node' ,item => item.getModel().nextId === id)[0]
+    const lastSibling = this.findAll(
+      "node",
+      (item) => item.getModel().nextId === id
+    )[0];
     if (lastSibling) {
       lastSibling.update({
-        nextId: model.nextId
-      })
+        nextId: model.nextId,
+      });
     }
-    super.removeChild(id)
+    this.keepMatrix(super.removeChild)(id);
   }
 
   /** 获取选中节点 */
@@ -140,7 +146,6 @@ class Graph extends TreeGraph {
         }
       });
     });
-
   }
 }
 
