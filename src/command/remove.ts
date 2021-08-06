@@ -33,7 +33,7 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
     } else if (originalModel.parentId) {
       graph.keepMatrix(graph.addChild)(originalModel, originalModel.parentId);
     }
-    graph.setSelectedItems([graph.findById(originalModel.id)]);
+    graph.setSelectedItems([originalModel.id]);
   }
 
   canExecute(): boolean {
@@ -59,7 +59,7 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
     const { id, originalModel } = params;
     graph.keepMatrix(graph.removeChild)(id);
     originalModel.parentId &&
-      graph.setSelectedItems([graph.findById(originalModel.parentId)]);
+      graph.setSelectedItems([originalModel.parentId]);
   }
 }
 

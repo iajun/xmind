@@ -5,7 +5,6 @@ import {
   ItemState,
   NodeName,
 } from "./../constants";
-import "./style.css";
 import { modifyCSS, createDom } from "@antv/dom-util";
 import { Item } from "@antv/g6-core";
 import Base from "@antv/g6-plugin/lib/base";
@@ -216,7 +215,7 @@ export default class EditableLabel extends Base {
 
     this.bindListener(
       "outerClick",
-      document,
+      document as any,
       "click",
       this.outerClick.bind(this)
     );

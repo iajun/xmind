@@ -26,6 +26,10 @@ class Graph extends TreeGraph {
     };
   }
 
+  getLastSibling(id: string) {
+    return this.findAll('node' ,item => item.getModel().nextId === id)[0]
+  }
+
   insertBefore(model: TreeGraphData, id: string | Item) {
     const graphData: TreeGraphData = _.cloneDeep(this.get("data"));
     const item: Item = typeof id === "string" ? this.findById(id) : id;
@@ -110,7 +114,7 @@ class Graph extends TreeGraph {
   }
 
   /** 设置节点和边的选中 */
-  setSelectedItems(items: Item[] | string[]) {
+  setSelectedItems(items: (Item | string)[] | string[]) {
     this.executeBatch(() => {
       const selectedNodes = this.getSelectedNodes();
       const selectedEdges = this.getSelectedEdges();

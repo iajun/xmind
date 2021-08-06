@@ -24,6 +24,8 @@ export interface ICommand<P = object> {
   params: P;
   /** 是否可以执行 */
   canExecute(): boolean;
+  /** 是否应该执行，外界注入 */
+  shouldExecute?: () => boolean;
   /** 是否可以撤销 */
   canUndo(): boolean;
   /** 执行命令 */

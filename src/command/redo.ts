@@ -44,8 +44,8 @@ class redoCommand implements ICommand<{}> {
 
     const command  = commandQueue[commandIndex];
     
-    if (command && command.params.id) {
-      const id = command.params.id;
+    if (command && (command.params as any).id) {
+      const id = (command.params as any).id;
       this.graph.setSelectedItems([id])
     }
 

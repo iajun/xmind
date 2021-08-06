@@ -5,17 +5,18 @@ import XMindNode from "./shape/xmindNode";
 import EditableLabel from "./plugin/editableLabel";
 import { Global } from './types';
 import config, { setGlobal } from './config';
-import { CommandController, createCommandManager } from "./command";
+import { createCommandManager, CommandOption, CommandManager } from "./command";
 import './behavior'
 import _ from 'lodash';
 import Graph from './graph';
 
 type GraphOptions = Pick<IGraphOptions, 'container' | 'animate' | 'animateCfg' | 'fitCenter' | 'fitView' | 'fitViewPadding' | 'width' | 'height' | 'maxZoom' | 'minZoom' | 'plugins'> & {
   global?: Partial<Global>
-  data?: TreeGraphData
+  data?: TreeGraphData,
+  commands?: CommandOption[]
 }
 
-let commandController: CommandController
+let commandManager: CommandManager
 
 function getDefaultOptions(): IGraphOptions {
   return  {
@@ -84,7 +85,7 @@ function shouldBeginCollapseExpand(e: IG6GraphEvent) {
   const model = item.getModel();
 
   if (shouldBegin) {
-    commandController.execute(
+    commandManager.execute(
       model.collapsed ? "unfold" : "fold", {
       id: item.getID(),
     });
@@ -95,13 +96,13 @@ function shouldBeginCollapseExpand(e: IG6GraphEvent) {
 
 
 export function createGraph(options: GraphOptions) {
-  const {global, data, ...rest} = options
+  const {global, data, commands, ...rest} = options
   if (global) setGlobal(global)
   const finalOptions = _.merge({}, userGlobalOptions, getDefaultOptions(), rest)
   
   const graph = new Graph(finalOptions)
-  commandController = new CommandController(graph, createCommandManager(graph));
-  graph.set("command", commandController);
+  commandManager = createCommandManager(graph, commands);
+  graph.set("command", commandManager);
   graph.changeData(data)
   if (data?.id) {
     graph.focusItem(data.id)

@@ -30,8 +30,7 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { graph, params } = this;
     const { newId, sourceId } = params;
     graph.keepMatrix(graph.removeChild)(newId);
-    const item = graph.findById(sourceId);
-    graph.setSelectedItems([item])
+    graph.setSelectedItems([sourceId])
   }
 
   canExecute(): boolean {
@@ -48,16 +47,16 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { graph } = this;
     const selectedNodes = graph.getSelectedNodes();
     this.params.sourceId = selectedNodes[0].getID()
+    const id = v4();
+    this.params.newId = id;
   }
 
   execute() {
     const { graph, params } = this;
-    const { sourceId } = params;
+    const { sourceId, newId } = params;
     const item = graph.findById(sourceId)!;
-    const id = v4();
-    this.params.newId = id;
-    graph.keepMatrix(graph.addChild)({ id, label: "subTopic", type: 'xmindNode', children: [] }, item)
-    graph.setSelectedItems([graph.findById(id)])
+    graph.keepMatrix(graph.addChild)({ id: newId, label: "subTopic", type: 'xmindNode', children: [] }, item)
+    graph.setSelectedItems([newId])
   }
 }
 

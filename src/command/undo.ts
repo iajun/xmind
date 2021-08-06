@@ -42,8 +42,8 @@ class undoCommand implements ICommand<{}> {
     const lastCommand = commandQueue[commandIndex - 1];
     lastCommand.undo();
 
-    if (lastCommand && lastCommand.params.id) {
-      const id = lastCommand.params.id;
+    if (lastCommand && (lastCommand.params as any).id) {
+      const id = (lastCommand.params as any).id;
       this.graph.setSelectedItems([id]);
     }
 

@@ -1,12 +1,12 @@
 import { ICommand, TreeGraphData } from "../types";
 import Graph from "../graph";
 import { Util } from "@antv/g6";
-import {v4} from 'uuid'
+import { v4 } from "uuid";
 import _ from "lodash";
 
 export interface PasteCommandParams {
-    targetId: string,
-    newRootId: string
+  parentId: string;
+  newModel: TreeGraphData;
 }
 
 class PasteCommand implements ICommand<PasteCommandParams> {
@@ -14,8 +14,8 @@ class PasteCommand implements ICommand<PasteCommandParams> {
   name = "paste";
 
   params = {
-    targetId: "",
-    newRootId: ''
+    parentId: "",
+    newModel: {} as TreeGraphData,
   };
 
   shortcuts = [
@@ -33,8 +33,9 @@ class PasteCommand implements ICommand<PasteCommandParams> {
 
   undo(): void {
     const { graph, params } = this;
-    const { newRootId} = params
-    graph.removeChild(newRootId)
+    const { newModel, parentId } = params;
+    graph.removeChild(newModel.id);
+    graph.setSelectedItems([parentId])
   }
 
   canExecute(): boolean {
@@ -42,31 +43,27 @@ class PasteCommand implements ICommand<PasteCommandParams> {
     const selectedNodes = graph.getSelectedNodes();
     if (selectedNodes.length !== 1) {
       return false;
-    } 
-    const model =  graph.get('clipboard')?.model
-    return !!model
+    }
+    const model = graph.get("clipboard")?.model;
+    return !!model && model.id;
   }
 
   init() {
     const { graph } = this;
-    const selectedNode = graph.getSelectedNodes()[0];
-    this.params = {
-      ...this.params,
-      targetId: selectedNode.getID()
-    };
+    const newModel = _.cloneDeep(graph.get("clipboard")?.model);
+    Util.traverseTree(newModel, (item: TreeGraphData) => {
+      item.id = v4();
+    });
+    this.params.newModel = newModel;
   }
 
   execute() {
     const { graph, params } = this;
-    const { targetId} = params
-    const model =  _.cloneDeep(graph.get('clipboard')?.model)
-    if (!model || !model.id) return;
-    Util.traverseTree(model, (item: TreeGraphData) => {
-      item.id = v4()
-    })
-    this.params.newRootId = model.id;
-    graph.keepMatrix(graph.addChild)(model, targetId)
-    graph.setSelectedItems([graph.findById(model.id)])
+    const { newModel } = params;
+    const selectedNode = graph.getSelectedNodes()[0];
+    const parentId = this.params.parentId = selectedNode.getID();
+    graph.keepMatrix(graph.addChild)(newModel, parentId);
+    graph.setSelectedItems([newModel.id]);
   }
 }
 

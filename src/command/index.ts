@@ -1,4 +1,3 @@
-import CommandController from "./controller";
 import CommandManager from "./manager";
 import FoldCommand from "./fold";
 import UnFoldCommand from "./unfold";
@@ -11,7 +10,12 @@ import CutCommand from "./cut";
 import TopicCommand from "./topic";
 import SubTopicCommand from "./subTopic";
 import DeleteCommand from "./remove";
+import MoveUpCommand from './moveUp'
+import MoveDownCommand from './moveDown'
+import MoveLeftCommand from './moveLeft'
+import MoveRightCommand from './moveRight'
 import Graph from "../graph";
+import { ICommand } from "../types";
 
 const commands = {
   FoldCommand,
@@ -27,8 +31,14 @@ const commands = {
   DeleteCommand,
 };
 
-function createCommandManager(graph: Graph, keys?: string[]) {
-  const manager = new CommandManager();
+export type CommandOption = {
+  name: string;
+  enabled?: boolean;
+  shouldExecute?: (item: Node) => void;
+};
+
+function createCommandManager(graph: Graph, commandOptions?: CommandOption[]) {
+  const manager = new CommandManager(graph);
 
   let commands = [
     new FoldCommand(graph),
@@ -42,18 +52,36 @@ function createCommandManager(graph: Graph, keys?: string[]) {
     new TopicCommand(graph),
     new SubTopicCommand(graph),
     new DeleteCommand(graph),
+    new MoveUpCommand(graph),
+    new MoveDownCommand(graph),
+    new MoveLeftCommand(graph),
+    new MoveRightCommand(graph),
   ];
-  if (keys) {
-    commands = commands.filter((command) => keys.includes(command.name));
+
+  let resolvedCommands: ICommand<any>[] = [];
+
+  if (!commandOptions) {
+    resolvedCommands = commands;
+  } else {
+    commands.forEach(command => {
+      const option = commandOptions.find(option => option.name === command.name);
+      if (!option) {
+        resolvedCommands.push(command)
+      } else {
+        if (option.enabled ===  false) return;
+        (command as any).shouldExecute = option.shouldExecute.bind(command);
+        resolvedCommands.push(command)
+      }
+    })
   }
 
-  commands.forEach((command) => {
+  resolvedCommands.forEach((command) => {
     manager.register(command);
   });
 
   return manager;
 }
 
-export { CommandController, CommandManager, createCommandManager };
+export { CommandManager, createCommandManager };
 
 export default commands;

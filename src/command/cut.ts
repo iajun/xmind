@@ -62,8 +62,8 @@ class CutCommand implements ICommand<CutCommandParams> {
 
   execute() {
     const { graph, params } = this;
-    const { id } = params;
-    graph.set("clipboard", { id, model: graph.findDataById(id) });
+    const { id, model } = params;
+    graph.set("clipboard", { id, model });
     graph.keepMatrix(graph.removeChild)(id);
   }
 }

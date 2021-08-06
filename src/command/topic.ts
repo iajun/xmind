@@ -30,8 +30,7 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { graph, params } = this;
     const { newId, originalModel } = params;
     graph.keepMatrix(graph.removeChild)(newId);
-    const item = graph.findById(originalModel.id);
-    graph.setSelectedItems([item])
+    graph.setSelectedItems([originalModel.id])
   }
 
   canExecute(): boolean {
@@ -48,20 +47,20 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { graph } = this;
     const selectedNodes = graph.getSelectedNodes();
     this.params.originalModel = selectedNodes[0].getModel() as TreeGraphData;
+    const id = v4();
+    this.params.newId = id;
   }
 
   execute() {
     const { graph, params } = this;
-    const { originalModel } = params;
-    const id = v4();
-    const newModel = { id, label: "topic", type: 'xmindNode', children: [] };
+    const { originalModel, newId } = params;
+    const newModel = { id: newId, label: "topic", type: 'xmindNode', children: [] };
     if (originalModel.nextId) {
       graph.keepMatrix(graph.insertBefore)(newModel, originalModel.nextId)
     } else {
       graph.keepMatrix(graph.addChild)(newModel, graph.findById(originalModel.parentId));
     }
-    this.params.newId = id;
-    graph.setSelectedItems([graph.findById(id)])
+    graph.setSelectedItems([newId])
     this.graph.layout(false);
   }
 }

@@ -1,4 +1,4 @@
-import { ModelNode, Node } from "./types";
+import { Node, TreeGraphData } from "./types";
 import _ from "lodash";
 
 const NO_ID = "__NO_ID__";
@@ -28,7 +28,7 @@ const traverse = <T extends { children: T[] }>(
 
 class Model {
   public sourceData: Node[];
-  private tree?: ModelNode;
+  private tree?: TreeGraphData;
 
   constructor(data: Node[]) {
     this.sourceData = data;
@@ -59,7 +59,7 @@ class Model {
       parentNode: Node | null,
       lastChildNodeId: string | null,
       level: number
-    ): ModelNode[] => {
+    ): TreeGraphData[] => {
       const key = this.genKey(parentNode, lastChildNodeId || NO_ID);
       if (map[key]) {
         let node: Node = map[key];
@@ -74,7 +74,7 @@ class Model {
               ? "xmindNode"
               : "xmindNode";
           node.level = level;
-          children.push(node as ModelNode);
+          children.push(node as TreeGraphData);
           node = map[this.genKey(parentNode, node.id)];
         }
         return children.reverse();
