@@ -1,9 +1,10 @@
-import { ICommand } from "../types";
+import { ICommand, TreeGraphData } from "../types";
 import Graph from "../graph";
 import _ from "lodash";
 
 export interface CopyCommandParams {
   id: string;
+  model: TreeGraphData;
 }
 
 class CopyCommand implements ICommand<CopyCommandParams> {
@@ -12,6 +13,7 @@ class CopyCommand implements ICommand<CopyCommandParams> {
 
   params = {
     id: "",
+    model: {} as TreeGraphData,
   };
 
   shortcuts = [
@@ -27,8 +29,7 @@ class CopyCommand implements ICommand<CopyCommandParams> {
     return false;
   }
 
-  undo(): void {
-  }
+  undo(): void {}
 
   canExecute(): boolean {
     const selectedNodes = this.graph.getSelectedNodes();
@@ -39,17 +40,18 @@ class CopyCommand implements ICommand<CopyCommandParams> {
     const { graph } = this;
     const selectedNodes = graph.getSelectedNodes();
     if (!selectedNodes.length) return;
+    const id = selectedNodes[0].getID();
+    const model = _.cloneDeep(graph.findDataById(id)) as TreeGraphData;
     this.params = {
-      id: selectedNodes[0].getID(),
+      id,
+      model,
     };
   }
 
   execute() {
-    const { graph } = this;
-    const { id } = this.params
-    const model = graph.findDataById(id);
-   
-    this.graph.set('clipboard', {id, model })
+    const { id, model } = this.params;
+
+    this.graph.set("clipboard", { id, model });
   }
 }
 

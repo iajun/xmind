@@ -54,6 +54,14 @@ class PasteCommand implements ICommand<PasteCommandParams> {
     Util.traverseTree(newModel, (item: TreeGraphData) => {
       item.id = v4();
     });
+    Util.traverseTree(newModel, (item) => {
+      if (item.children && item.children.length) {
+        item.children.forEach((child, i) => {
+          child.nextId = item.children[i + 1] ? item.children[i + 1].id : null;
+          child.parentId = item.id;
+        });
+      }
+    });
     this.params.newModel = newModel;
   }
 
@@ -62,6 +70,7 @@ class PasteCommand implements ICommand<PasteCommandParams> {
     const { newModel } = params;
     const selectedNode = graph.getSelectedNodes()[0];
     const parentId = this.params.parentId = selectedNode.getID();
+    newModel.parentId = parentId;
     graph.addChild(newModel, parentId);
     graph.setSelectedItems([newModel.id]);
   }

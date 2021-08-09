@@ -13,8 +13,8 @@ import config from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
 
-type EditableLabelConfig = {
-  key: string;
+export type EditableLabelConfig = {
+  key?: string;
   shouldBegin?: (item: INode) => boolean;
 }
 
@@ -241,8 +241,7 @@ export default class EditableLabel extends Base {
   }
 
   public destroy() {
-    const menu = this.get("menu");
     this.unbindAllListeners();
-    this.container.removeChild(menu);
+    this.container.removeChild(this.wrapperEl);
   }
 }

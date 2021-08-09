@@ -1,5 +1,5 @@
 import { EditorEvent, ItemState } from "./constants";
-import { IEdge, INode, TreeGraph, TreeGraphData, Util } from "@antv/g6";
+import { GraphData, IEdge, INode, TreeGraph, TreeGraphData, Util } from "@antv/g6";
 import { Item } from "./types";
 import _ from "lodash";
 
@@ -54,10 +54,12 @@ class Graph extends TreeGraph {
     });
 
     if (isValid) {
-      this.keepMatrix(() => {
-        this.changeData(graphData);
-      });
+      this.changeData(graphData);
     }
+  }
+
+  changeData(data:  GraphData | TreeGraphData) {
+    return this.keepMatrix(super.changeData)(data)
   }
 
   addChild(data: TreeGraphData, parent: string | Item): void {
