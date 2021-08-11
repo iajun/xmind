@@ -5,6 +5,6 @@ import createGraph from './index'
 createGraph({
   data: new Model(list as any).data,
   container: 'xmind',
-  width: 1000,
-  height: 400,
+  width: 1400,
+  height: 800,
 })

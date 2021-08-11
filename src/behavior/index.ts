@@ -5,4 +5,4 @@ import DragNodeBehavior from "./drag-node";
 
 G6.registerBehavior("click-item", ClickItemBehavior);
 G6.registerBehavior("scroll-canvas", ScrollCanvasBehavior);
-G6.registerBehavior("drag-node2", DragNodeBehavior);
+G6.registerBehavior("drag-node", DragNodeBehavior);
