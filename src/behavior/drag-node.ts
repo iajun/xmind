@@ -2,7 +2,7 @@ import { BehaviorOption, INode, Util, Global } from "@antv/g6";
 import { G6Event, IG6GraphEvent } from "@antv/g6-core";
 import { BBox } from "@antv/g-base";
 import Graph from "../graph";
-import _, { each, last } from "lodash";
+import _ from "lodash";
 import { deepMix } from "@antv/util";
 
 type NodePosition = {

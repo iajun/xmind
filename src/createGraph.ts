@@ -70,7 +70,6 @@ function getDefaultOptions(): IGraphOptions {
     modes: {
       default: [
         "click-item",
-        "drag-node",
         {
           type: "scroll-canvas",
         },
