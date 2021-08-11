@@ -122,7 +122,7 @@ export default class EditableLabel extends Base {
 
     const lineHeight = labelShape.attr("lineHeight");
     modifyCSS(this.editorEl, {
-      "max-width": `${config.xmindNode.maxLabelWidth}px`,
+      "max-width": `${config.xmindNode.labelStyle.maxWidth}px`,
       height: "auto",
       "line-height": `${lineHeight}px`,
     });
@@ -138,13 +138,15 @@ export default class EditableLabel extends Base {
 
     const matrix = graph.getGroup().getMatrix();
     const containerPoint = Util.applyMatrix(item.getBBox(), matrix);
+    const labelBBox = labelShape.getBBox()
+    
     const matrixString = [
       matrix[0],
       matrix[1],
       matrix[3],
       matrix[4],
-      containerPoint.x,
-      containerPoint.y,
+      containerPoint.x + labelBBox.x,
+      containerPoint.y 
     ].join();
 
     modifyCSS(this.wrapperEl, {

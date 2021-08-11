@@ -71,7 +71,7 @@ class Model {
             key === this.rootKey
               ? "rootNode"
               : node.children.length
-              ? "xmindNode"
+              ? "dirNode"
               : "xmindNode";
           node.level = level;
           children.push(node as TreeGraphData);

@@ -1,6 +1,6 @@
-import { TreeGraphData } from './types';
+import { TreeGraphData } from "./types";
 
-const list: Omit<TreeGraphData, 'children'>[] = [
+const list: Omit<TreeGraphData, "children">[] = [
   {
     id: "__1__",
     parentId: null,
@@ -14,7 +14,51 @@ const list: Omit<TreeGraphData, 'children'>[] = [
     nextId: "__3__",
     label: "second first node",
     priority: 1,
-    remark:'hello',
+    leftIcons: [
+      {
+        text: "\ue63f",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+    ],
+    rightIcons: [
+      {
+        text: "\ue63f",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+    ],
+    remark: "hello",
   },
   {
     id: "__3__",
@@ -22,7 +66,7 @@ const list: Omit<TreeGraphData, 'children'>[] = [
     nextId: null,
     label: "second second node",
     priority: 2,
-    remark:'分局案例放假啦flajfljadlfjalflajlfa分局案例饭局按逻辑阀了',
+    remark: "分局案例放假啦flajfljadlfjalflajlfa分局案例饭局按逻辑阀了",
   },
   {
     id: "__4__",

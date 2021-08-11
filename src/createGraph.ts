@@ -1,19 +1,19 @@
-import { FOLD_BUTTON_GROUP } from "./shape/xmindNode";
+import { FOLD_BUTTON_GROUP } from "./shape/createLineNode";
 import {
   GraphOptions as IGraphOptions,
   IG6GraphEvent,
   INode,
   TreeGraphData,
 } from "@antv/g6";
-import RootNode from "./shape/rootNode";
-import XMindNode from "./shape/xmindNode";
 import EditableLabel, { EditableLabelConfig } from "./plugin/editableLabel";
 import { Global } from "./types";
 import config, { setGlobal } from "./config";
 import { createCommandManager, CommandOption, CommandManager } from "./command";
 import "./behavior";
+import './shape'
 import _ from "lodash";
 import Graph from "./graph";
+import { getSizeByConfig } from "./shape/util";
 
 type GraphOptions = Pick<
   IGraphOptions,
@@ -47,12 +47,14 @@ function getDefaultOptions(): IGraphOptions {
       type: "mindmap",
       direction: "H",
       getWidth: (node: any) => {
-        if (node.type === "rootNode") return RootNode.getSize(node)[0];
-        return XMindNode.getSize!(node)[0];
+        if (node.type === "rootNode")
+          return getSizeByConfig(config.rootNode, node)[0];
+        return getSizeByConfig(config.xmindNode, node)[0];
       },
       getHeight: (node: any) => {
-        if (node.type === "rootNode") return RootNode.getSize(node)[1];
-        return XMindNode.getSize!(node)[1];
+        if (node.type === "rootNode")
+          return getSizeByConfig(config.rootNode, node)[1];
+        return getSizeByConfig(config.xmindNode, node)[1];
       },
       getSide: () => {
         return "right";
@@ -128,6 +130,7 @@ export function createGraph(options: GraphOptions) {
   const graph = new Graph(finalOptions);
   commandManager = createCommandManager(graph, commands);
   graph.set("command", commandManager);
+
   graph.changeData(data);
   return graph;
 }

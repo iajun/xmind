@@ -14,6 +14,7 @@ export enum NodeName {
   BaseNodeText = 'baseNodeText',
   XmindNode = 'xmindNode',
   Remark = 'xmindNodeRemark',
+  DirGroup = 'dirGroup',
 }
 
 export enum EditorEvent {

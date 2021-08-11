@@ -45,4 +45,9 @@ export type Item = INode | IEdge;
 export type Global = {
   stroke: string,
   lineWidth: number
+  icon: {
+    fontSize: number,
+    fontFamily: string,
+    gap: number,
+  }
 }
