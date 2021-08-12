@@ -1,10 +1,10 @@
 import { createGraph } from "./createGraph";
-import config from './config'
+import config from "./config";
 
-export { createGraph, setGlobalOptions} from './createGraph'
+export { createGraph, setGlobalOptions } from "./createGraph";
 
-export * from './shape'
+export * from "./shape";
 
-export default createGraph
+export default createGraph;
 
-export const Global = config
+export const Global = config;

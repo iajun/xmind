@@ -17,11 +17,11 @@ type NodePosition = {
 
 const MAX_THRESHOLD = 100;
 
-const PLACEHOLDER_MODEL = {
-  id: 'dragPlaceholderNode',
+const getPlaceholderModel = () => ({
+  id: "dragPlaceholderNode",
   type: "dragPlaceholderNode",
   label: "",
-};
+});
 
 const compute = {
   containerCenter: (graph: Graph, item: INode) => {
@@ -119,12 +119,18 @@ const DragNodeBehavior: BehaviorOption = {
       ..._.pick(itemBBox, ["width", "height"]),
     };
 
-    graph.findAll("node", (node) => {
+    this.placeholderModel = getPlaceholderModel();
+    graph.removeChild(this.model.id);
+  },
+
+  cacheAllPoints() {
+    this.get("graph").findAll("node", (node) => {
       const bBox = node.getContainer().getBBox();
       const matrix = node.getContainer().getMatrix();
       const model = node.getModel();
 
-      if (model.id === e.item.getID()) return false;
+      if (model.id === this.model.id || model.id === this.placeholderModel.id)
+        return false;
       this.nodePoints.push({
         width: bBox.width,
         height: bBox.height,
@@ -136,36 +142,50 @@ const DragNodeBehavior: BehaviorOption = {
       });
       return false;
     });
-    graph.removeChild(this.model.id);
   },
 
-  onDragging (e: MouseEvent) {
-    const graph: Graph = this.graph;
+  onDragging: _.throttle(
+    function (e: MouseEvent) {
+      const graph: Graph = this.graph;
+      this.cacheAllPoints();
 
-    const point = compute.applyOffset(
-      graph.getPointByClient(e.clientX, e.clientY),
-      this.itemPosition
-    );
+      const point = compute.applyOffset(
+        graph.getPointByClient(e.clientX, e.clientY),
+        this.itemPosition
+      );
 
-    this.updateDelegate(point.x, point.y);
-    this.closetItem = compute.closeItem(this.nodePoints, point.x, point.y);
+      this.closetItem = compute.closeItem(this.nodePoints, point.x, point.y);
 
-    const isEqual = (item1, item2) => {
-      return item1
-        ? item2
-          ? item1.id === item2.id
-          : false
-        : item2
-        ? false
-        : true;
-    };
+      const isEqual = (item1, item2) => {
+        return item1
+          ? item2
+            ? item1.id === item2.id
+            : false
+          : item2
+          ? false
+          : true;
+      };
 
-    if (this.lastClosetItem && isEqual(this.closestItem.parent, this.lastClosetItem.parent) && isEqual(this.closestItem.sibling, this.lastClosetItem.sibling)) return;
-    this.placeChildren(e, PLACEHOLDER_MODEL);
-    this.lastClosetItem = this.closestItem;
-  },
+      if (
+        this.lastClosetItem &&
+        isEqual(this.closestItem.parent, this.lastClosetItem.parent) &&
+        isEqual(this.closestItem.sibling, this.lastClosetItem.sibling)
+      )
+        return;
 
-  placeChildren(e: MouseEvent, model) {
+      this.updateDelegate(point.x, point.y);
+
+      this.lastClosetItem = this.closestItem;
+      this.placeChildren(e, this.placeholderModel);
+      // console.log(this.delegateRect);
+    },
+    30,
+    {
+      leading: true,
+    }
+  ),
+
+  placeChildren: function placeChildren(e: MouseEvent, model) {
     const { graph, closetItem } = this;
     const { parent, sibling } = closetItem;
 
@@ -174,35 +194,31 @@ const DragNodeBehavior: BehaviorOption = {
       return model.children && model.children.length;
     };
 
+    const point = compute.applyOffset(
+      graph.getPointByClient(e.clientX, e.clientY),
+      this.itemPosition
+    );
 
-    graph.executeBatch(() => {
-      const point = compute.applyOffset(
-        graph.getPointByClient(e.clientX, e.clientY),
-        this.itemPosition
-      );
+    if (graph.findById(model.id)) {
+      graph.removeChild(model.id);
+    }
 
-      if (graph.findById(model.id)) {
-        graph.removeChild(model.id);
-      }
-
-      if (!parent) {
+    if (!parent) {
+      graph.addChild(model, model.parentId);
+    } else if (!sibling) {
+      if (hasChildren(parent.id)) {
         graph.addChild(model, model.parentId);
-      } else if (!sibling) {
-        if (hasChildren(parent.id)) {
-          graph.addChild(model, model.parentId);
-        } else {
-          graph.addChild(model, parent.id);
-        }
       } else {
-        let nextId = sibling.y > point.y ? sibling.id : sibling.nextId;
-        if (!nextId) {
-          graph.addChild(model, parent.id);
-        } else {
-          graph.insertBefore(model, sibling.id);
-        }
+        graph.addChild(model, parent.id);
       }
-    });
-
+    } else {
+      let nextId = sibling.y > point.y ? sibling.id : sibling.nextId;
+      if (!nextId) {
+        graph.addChild(model, parent.id);
+      } else {
+        graph.insertBefore(model, sibling.id);
+      }
+    }
   },
 
   onDragEnd(e: MouseEvent) {
@@ -210,13 +226,15 @@ const DragNodeBehavior: BehaviorOption = {
     el.removeEventListener("mousemove", this.onDragging);
     el.removeEventListener("mouseup", this.onDragEnd);
 
+    console.log("end");
+
     if (this.delegateRect) {
       this.delegateRect.remove();
       this.delegateRect = null;
     }
 
-    if (graph.findById(PLACEHOLDER_MODEL.id)) {
-      graph.removeChild(PLACEHOLDER_MODEL.id)
+    if (graph.findById(this.placeholderModel.id)) {
+      graph.removeChild(this.placeholderModel.id);
     }
 
     this.placeChildren(e, model);
@@ -230,7 +248,7 @@ const DragNodeBehavior: BehaviorOption = {
       y,
     };
 
-    if (!this.delegateRect) {
+    if (!this.delegateRect || this.delegateRect.destroyed) {
       // 拖动多个
       const parent = graph.get("group");
       const attrs = deepMix({}, Global.delegateStyle, this.delegateStyle);
@@ -245,7 +263,6 @@ const DragNodeBehavior: BehaviorOption = {
         },
         name: "rect-delegate-shape",
       });
-      this.delegate = this.delegateRect;
       this.delegateRect.set("capture", false);
     } else {
       this.delegateRect.attr(newPoint);

@@ -1,5 +1,12 @@
 import { EditorEvent, ItemState } from "./constants";
-import { GraphData, IEdge, INode, TreeGraph, TreeGraphData, Util } from "@antv/g6";
+import {
+  GraphData,
+  IEdge,
+  INode,
+  TreeGraph,
+  TreeGraphData,
+  Util,
+} from "@antv/g6";
 import { Item } from "./types";
 import _ from "lodash";
 
@@ -30,36 +37,32 @@ class Graph extends TreeGraph {
   }
 
   insertBefore(model: TreeGraphData, id: string | Item) {
-    const graphData: TreeGraphData = _.cloneDeep(this.get("data"));
     const item: Item = typeof id === "string" ? this.findById(id) : id;
+    const parentId = item.getModel().parentId as string | null;
+    if (!parentId) return;
+
+    const children = _.cloneDeep(
+      this.findById(parentId).getModel().children
+    ) as TreeGraphData[] | null;
+    if (!children) return;
 
     const nextSiblingModel = item.getModel();
 
-    let isValid = false;
+    const idx = children.findIndex((item) => item.id === nextSiblingModel.id);
 
-    Util.traverseTree(graphData, (item: TreeGraphData) => {
-      if (item.id === nextSiblingModel.parentId) {
-        if (!item.children) return;
-        const idx = item.children.findIndex(
-          (item) => item.id === nextSiblingModel.id
-        );
-        isValid = true;
+    model.nextId = nextSiblingModel.id;
+    model.parentId = nextSiblingModel.parentId;
 
-        model.nextId = nextSiblingModel.id;
-        model.parentId = nextSiblingModel.parentId;
+    children[idx - 1] && (children[idx - 1].nextId = model.id);
+    children.splice(idx, 0, model);
 
-        item.children[idx - 1] && (item.children[idx - 1].nextId = model.id);
-        item.children.splice(idx, 0, model);
-      }
-    });
-
-    if (isValid) {
-      this.changeData(graphData);
+    if (children) {
+      this.updateChildren(children, model.parentId as string);
     }
   }
 
-  changeData(data:  GraphData | TreeGraphData) {
-    return this.keepMatrix(super.changeData)(data)
+  changeData(data: GraphData | TreeGraphData) {
+    return this.keepMatrix(super.changeData)(data);
   }
 
   addChild(data: TreeGraphData, parent: string | Item): void {

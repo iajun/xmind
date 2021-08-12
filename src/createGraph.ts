@@ -10,7 +10,7 @@ import { Global } from "./types";
 import config, { setGlobal } from "./config";
 import { createCommandManager, CommandOption, CommandManager } from "./command";
 import "./behavior";
-import './shape'
+import "./shape";
 import _ from "lodash";
 import Graph from "./graph";
 import { getSizeByConfig } from "./shape/util";
@@ -70,6 +70,7 @@ function getDefaultOptions(): IGraphOptions {
     modes: {
       default: [
         "click-item",
+        "drag-node",
         {
           type: "scroll-canvas",
         },
