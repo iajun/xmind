@@ -8,6 +8,7 @@
 
 #xmind {
   border: 1px solid gold;
+  position: relative;
 }
 
 .g6-editable {
@@ -25,7 +26,15 @@
 }
 
 .g6-editable-label {
+  background: red;
   outline: 0;
   height: auto;
   white-space: pre-wrap;
+}
+
+.g6-dom-align {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
 }

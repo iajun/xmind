@@ -3,6 +3,7 @@ import Graph from "../graph";
 import { Util } from "@antv/g6";
 import { v4 } from "uuid";
 import _ from "lodash";
+import { CTRL_KEY } from "../utils";
 
 export interface PasteCommandParams {
   parentId: string;
@@ -19,8 +20,7 @@ class PasteCommand implements ICommand<PasteCommandParams> {
   };
 
   shortcuts = [
-    ["metaKey", "v"],
-    ["ctrlKey", "v"],
+    [CTRL_KEY, "v"],
   ];
 
   constructor(graph: Graph) {

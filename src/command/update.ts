@@ -38,17 +38,16 @@ class UpdateCommand implements ICommand<UpdateCommandParams> {
 
   execute(): void {
     const { graph } = this;
-    const { id, updateModel, forceLayout } = this.params;
+    const { id, updateModel } = this.params;
     graph.updateItem(id, updateModel);
-    if (forceLayout) {
-      graph.layout(false);
-    }
+    graph.layout(false);
   }
 
   undo(): void {
     const { graph } = this;
     const { id, originalModel } = this.params;
     graph.updateItem(id, originalModel);
+    graph.layout(false);
   }
 
   init(): void {

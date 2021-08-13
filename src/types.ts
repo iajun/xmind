@@ -1,4 +1,5 @@
 import { IEdge, INode, TreeGraphData as ITreeGraphData } from "@antv/g6";
+import { NodeConfig } from "./config";
 
 export type Node = {
   id: string;
@@ -49,5 +50,6 @@ export type Global = {
     fontSize: number,
     fontFamily: string,
     gap: number,
-  }
+  },
+  registeredNodes: Record<string, NodeConfig>
 }

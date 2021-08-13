@@ -2,7 +2,6 @@ import { FOLD_BUTTON_GROUP } from "./shape/createLineNode";
 import {
   GraphOptions as IGraphOptions,
   IG6GraphEvent,
-  INode,
   TreeGraphData,
 } from "@antv/g6";
 import EditableLabel, { EditableLabelConfig } from "./plugin/editableLabel";
@@ -14,6 +13,7 @@ import "./shape";
 import _ from "lodash";
 import Graph from "./graph";
 import { getSizeByConfig } from "./shape/util";
+import { onResize } from "./utils";
 
 type GraphOptions = Pick<
   IGraphOptions,
@@ -32,7 +32,8 @@ type GraphOptions = Pick<
   global?: Partial<Global>;
   data?: TreeGraphData;
   commands?: CommandOption[];
-  shouldBeginEdit?: (item: INode) => boolean;
+  editorLabelOptions?: EditableLabelConfig;
+  autoFit?: boolean
 };
 
 let commandManager: CommandManager;
@@ -46,15 +47,17 @@ function getDefaultOptions(): IGraphOptions {
     layout: {
       type: "mindmap",
       direction: "H",
-      getWidth: (node: any) => {
-        if (node.type === "rootNode")
-          return getSizeByConfig(config.rootNode, node)[0];
-        return getSizeByConfig(config.xmindNode, node)[0];
+      getWidth: (node) => {
+        const nodeConfig = config.global.registeredNodes[node.type];
+        if (!nodeConfig) return 0;
+        const { mapCfg, options } = nodeConfig;
+        return getSizeByConfig(options, typeof mapCfg === 'function' ? mapCfg(node) : node)[0];
       },
-      getHeight: (node: any) => {
-        if (node.type === "rootNode")
-          return getSizeByConfig(config.rootNode, node)[1];
-        return getSizeByConfig(config.xmindNode, node)[1];
+      getHeight: (node) => {
+        const nodeConfig = config.global.registeredNodes[node.type];
+        if (!nodeConfig) return 0;
+        const { mapCfg, options } = nodeConfig;
+        return getSizeByConfig(options, typeof mapCfg === 'function' ? mapCfg(node) : node)[1];
       },
       getSide: () => {
         return "right";
@@ -113,7 +116,7 @@ function shouldBeginCollapseExpand(e: IG6GraphEvent) {
 }
 
 export function createGraph(options: GraphOptions) {
-  const { global, data, shouldBeginEdit, commands, ...rest } = options;
+  const { global, data,  commands, autoFit,editorLabelOptions = {}, ...rest } = options;
   if (global) setGlobal(global);
   const finalOptions = _.merge(
     {},
@@ -122,15 +125,18 @@ export function createGraph(options: GraphOptions) {
     rest
   );
 
-  const editorLabelOptions: EditableLabelConfig = {};
-  if (typeof shouldBeginEdit === "function") {
-    editorLabelOptions.shouldBegin = shouldBeginEdit;
-  }
   finalOptions.plugins.push(new EditableLabel(editorLabelOptions));
 
   const graph = new Graph(finalOptions);
   commandManager = createCommandManager(graph, commands);
   graph.set("command", commandManager);
+
+  if (autoFit) {
+    onResize(graph, () => {
+      const el = graph.get('container');
+      graph.changeSize(el.clientWidth, el.clientHeight);
+    })
+  }
 
   graph.changeData(data);
   return graph;

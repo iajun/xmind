@@ -5,9 +5,9 @@ import {
   EditorEvent,
   GraphCommonEvent,
   ItemState,
-  RendererType,
 } from "../constants";
 import _ from "lodash";
+import { isFired } from "../utils";
 
 class CommandManager {
   command: {
@@ -17,11 +17,10 @@ class CommandManager {
   commandIndex: number;
   private graph: Graph;
   private el: HTMLElement;
-  private lastMouseDownTarget: HTMLElement | null;
+  private editorFocused = false
 
   constructor(graph: Graph, commands?: Record<string, ICommand>) {
     this.graph = graph;
-    this.lastMouseDownTarget = null;
     this.command = commands || {};
     this.commandQueue = [];
     this.commandIndex = 0;
@@ -36,6 +35,14 @@ class CommandManager {
 
   setWrapper(el: HTMLElement) {
     this.el = el;
+  }
+
+  unFocus() {
+    this.editorFocused = false;
+  }
+
+  focus() {
+    this.editorFocused = true;
   }
 
   /** 执行命令 */
@@ -73,6 +80,8 @@ class CommandManager {
 
     this.graph.emit(EditorEvent.onAfterExecuteCommand, command);
 
+    this.editorFocused = true;
+
     if (command.canUndo()) {
       const { commandQueue, commandIndex } = this;
 
@@ -87,51 +96,29 @@ class CommandManager {
   }
 
   private shouldTriggerShortcut(): Boolean {
-    const { lastMouseDownTarget: target, graph } = this;
-    const renderer: RendererType = graph.get("renderer");
-    const canvasElement = this.el || graph.get("canvas").get("el");
-
-    if (!target) {
-      return false;
-    }
-
-    if (target === canvasElement) {
-      return true;
-    }
-
-    if (renderer === RendererType.Svg) {
-      if (target.nodeName === "svg") {
-        return true;
-      }
-
-      let parentNode = target.parentNode;
-
-      while (parentNode && parentNode.nodeName !== "BODY") {
-        if (parentNode.nodeName === "svg") {
-          return true;
-        } else {
-          parentNode = parentNode.parentNode;
-        }
-      }
-      return false;
-    } else {
-      let parentNode = target.parentNode;
-      while (parentNode && parentNode.nodeName !== "BODY") {
-        if (parentNode === canvasElement) {
-          return true;
-        } else {
-          parentNode = parentNode.parentNode;
-        }
-      }
-
-      return false;
-    }
+    return this.editorFocused;
   }
 
+  get container() {
+    return this.el || this.graph.get('container');
+  }
+
+  private mousedownListener (e)  {
+    let parentNode = e.target.parentNode;
+    while (parentNode && parentNode.nodeName !== 'BODY') {
+      if (parentNode === this.container) {
+        this.editorFocused = true;
+        return;
+      } else {
+        parentNode = parentNode.parentNode;
+      }
+    }
+    this.editorFocused = false;
+  };
+
   private bind() {
-    const mousedownListener = (e) => {
-      this.lastMouseDownTarget = e.target as HTMLElement;
-    };
+    const mousedownListener = this.mousedownListener.bind(this)
+
     window.addEventListener(GraphCommonEvent.onMouseDown, mousedownListener);
 
     this.graph.on(EditorEvent.onBeforeDestroy, () => {
@@ -149,32 +136,7 @@ class CommandManager {
       Object.values(this.command).some((command) => {
         const { name, shortcuts } = command;
 
-        const flag = shortcuts.some((shortcut: string | string[]) => {
-          const { key } = e;
-
-          if (!Array.isArray(shortcut)) {
-            return shortcut === key;
-          }
-
-          const isMatched = shortcut.every((item, index) => {
-            if (index === shortcut.length - 1) {
-              return item === key;
-            }
-
-            return e[item];
-          });
-
-          // 不要按下其他按键
-          if (isMatched) {
-            return _.difference(
-              ["metaKey", "shiftKey", "ctrlKey", "altKey"],
-              shortcut
-            ).every((item) => !e[item]);
-          }
-          return false;
-        });
-
-        if (flag) {
+        if (isFired(shortcuts, e)) {
           e.preventDefault();
 
           this.execute(name);

@@ -1,5 +1,6 @@
 import { ICommand, TreeGraphData } from "./../types";
 import Graph from "../graph";
+import { CTRL_KEY } from "../utils";
 
 export interface FoldCommandParams {
   id: string;
@@ -14,8 +15,7 @@ class FoldCommand implements ICommand<FoldCommandParams> {
   };
 
   shortcuts = [
-    ["metaKey", "/"],
-    ["ctrlKey", "/"],
+    [CTRL_KEY, "/"],
   ];
 
   constructor(graph: Graph) {

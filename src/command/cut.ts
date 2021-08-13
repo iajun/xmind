@@ -1,5 +1,6 @@
 import { TreeGraphData, ICommand } from "../types";
 import Graph from "../graph";
+import { CTRL_KEY } from "../utils";
 
 export interface CutCommandParams {
   id: string;
@@ -18,8 +19,7 @@ class CutCommand implements ICommand<CutCommandParams> {
   } as CutCommandParams;
 
   shortcuts = [
-    ["metaKey", "x"],
-    ["ctrlKey", "x"],
+    [CTRL_KEY, "x"],
   ];
 
   constructor(graph: Graph) {

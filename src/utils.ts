@@ -1,10 +1,12 @@
 import G6, {
   ComboConfig,
   EdgeConfig,
+  IGraph,
   NodeConfig,
   TreeGraphData,
 } from "@antv/g6";
 import _ from "lodash";
+import { EditorEvent } from "./constants";
 const { Util } = G6;
 
 const isTextWrap = (str: string) => str === "\n";
@@ -71,3 +73,45 @@ export const isLabelEqual = (t1: string, t2: string) => {
   const mapText = (t: string) => t.trim();
   return _.isEqual(t1.split("\n").map(mapText), t2.split("\n").map(mapText));
 };
+
+function isMacintosh() {
+  return navigator.platform.indexOf('Mac') > -1
+}
+
+export const CTRL_KEY = isMacintosh ? 'metaKey' : 'ctrlKey'
+
+export const onResize = (graph: IGraph, cb: () => void) => {
+  const debounced = _.throttle(cb, 60);
+  window.addEventListener('resize', debounced)
+
+  graph.on(EditorEvent.onBeforeDestroy, () => {
+    window.removeEventListener('resize' ,debounced)
+  })
+}
+
+export const isFired = (shortcuts: string[] | string[][], e) => {
+  return shortcuts.some((shortcut: string | string[]) => {
+    const { key } = e;
+
+    if (!Array.isArray(shortcut)) {
+      return shortcut === key;
+    }
+
+    const isMatched = shortcut.every((item, index) => {
+      if (index === shortcut.length - 1) {
+        return item === key;
+      }
+
+      return e[item];
+    });
+
+    // 不要按下其他按键
+    if (isMatched) {
+      return _.difference(
+        ["metaKey", "shiftKey", "ctrlKey", "altKey"],
+        shortcut
+      ).every((item) => !e[item]);
+    }
+    return false;
+  });
+}

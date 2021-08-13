@@ -1,6 +1,6 @@
-import { IGroup, Item, ShapeOptions, Util } from "@antv/g6";
+import { IGroup, Item, ModelConfig, ShapeOptions, Util } from "@antv/g6";
 import _ from "lodash";
-import config, { NodeConfig } from "../config";
+import config, { NodeConfig, setGlobal } from "../config";
 import { ItemState, NodeName } from "../constants";
 import { TreeGraphData } from "../types";
 import {
@@ -14,7 +14,12 @@ import { drawUnfoldButton, drawFoldButton, getSizeByConfig } from "./util";
 const NODE_BOTTOM_LINE = "node-bottom-line";
 export const FOLD_BUTTON_GROUP = "node-fold-button";
 
-const createLineNode = (options: NodeConfig, globalCfg?: object): ShapeOptions => {
+const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => ModelConfig): ShapeOptions => {
+  setGlobal({
+    registeredNodes: {
+      [name]: { options , mapCfg}
+    }
+  })
   return {
     options,
 
@@ -75,8 +80,9 @@ const createLineNode = (options: NodeConfig, globalCfg?: object): ShapeOptions =
       const { lineHeight, fontSize, maxWidth, minWidth } = labelStyle;
       const formattedPadding = Util.formatPadding(padding);
       const label = fittingString(getLabelByModel(cfg), maxWidth, fontSize);
-      cfg = _.merge({}, cfg, globalCfg || {});
-
+      if (mapCfg) {
+        cfg = mapCfg(cfg)
+      }
       let textWidth = Math.max(fittingLabelWidth(label, fontSize), minWidth);
       if (textWidth + fontSize >= maxWidth) {
         textWidth = maxWidth;
@@ -115,6 +121,7 @@ const createLineNode = (options: NodeConfig, globalCfg?: object): ShapeOptions =
 
       ((leftIcons) as any[]).forEach((iconConfig, i) => {
         group.addShape("text", {
+          name: iconConfig.text,
           attrs: {
             x:
               baseLeft + i * (globalIconConfig.fontSize  + globalIconConfig.gap),
@@ -151,6 +158,7 @@ const createLineNode = (options: NodeConfig, globalCfg?: object): ShapeOptions =
 
       ((rightIcons) as any[]).forEach((iconConfig, i) => {
         group.addShape("text", {
+          name: iconConfig.text,
           attrs: {
             x: baseLeft + (i + 1) * globalIconConfig.gap + i * globalIconConfig.fontSize,
             y: height / 2,

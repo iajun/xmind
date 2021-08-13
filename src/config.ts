@@ -1,4 +1,5 @@
 import { ModelConfig, ShapeStyle } from "@antv/g6";
+import _ from "lodash";
 import { ItemState } from "./constants";
 import { Global } from "./types";
 
@@ -16,10 +17,11 @@ const global: Global = {
     fontFamily: "iconfont",
     gap: 6,
   },
+  registeredNodes: {}
 };
 
 export function setGlobal(options: Partial<Global>) {
-  Object.assign(global, options);
+  _.merge(global, options)
 }
 
 export default {

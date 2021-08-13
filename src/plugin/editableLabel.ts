@@ -8,13 +8,13 @@ import {
 import { modifyCSS, createDom } from "@antv/dom-util";
 import { Item } from "@antv/g6-core";
 import Base from "@antv/g6-plugin/lib/base";
-import { getLabelByModel, isLabelEqual } from "../utils";
+import { getLabelByModel, isFired, isLabelEqual } from "../utils";
 import config from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
 
 export type EditableLabelConfig = {
-  key?: string;
+  shortcuts?: string[] | string[][];
   shouldBegin?: (item: INode) => boolean;
 }
 
@@ -22,13 +22,14 @@ export default class EditableLabel extends Base {
   private editorEl!: HTMLDivElement;
   private wrapperEl!: HTMLDivElement;
   private container!: HTMLDivElement;
+  private originalTextRect: any
   private graph!: Graph;
   private item?: INode | null;
   private originalLabel: string = "";
 
   getDefaultCfgs() {
     return {
-      key: ' ',
+      shortcuts: [ ['metaKey', 'Enter'] ],
       shouldBegin() {
         return true;
       }
@@ -49,7 +50,7 @@ export default class EditableLabel extends Base {
 
   onKeyUp(e: IG6GraphEvent) {
     const selectedNode = this.graph.getSelectedNodes()[0];
-    if (!selectedNode || selectedNode.hasState(ItemState.Editing) || this.get('key') !== e.key) return;
+    if (!selectedNode || selectedNode.hasState(ItemState.Editing) || !isFired(this.get('shortcuts'), e)) return;
     this.onShow(selectedNode);
   }
 
@@ -128,6 +129,26 @@ export default class EditableLabel extends Base {
     });
   }
 
+  adjustGraphSize(e) {
+    const text = e.target.textContent;
+    const { clientWidth: width, clientHeight: height } = this.editorEl;
+    const { item } = this;
+    if (!this.originalTextRect) {
+      const bBox = item.getBBox();
+      this.originalTextRect = { width, height, itemWidth: bBox.width, itemHeight: bBox.height };
+    }
+    const { lastRect } = this.originalTextRect;
+    if (lastRect && width === lastRect.width && height === lastRect.height) {
+      return;
+    }
+    item.update({
+      label: text
+    });
+    this.graph.layout();
+    this.adjustPosition();
+    this.originalTextRect.lastRect = { width, height };
+  }
+
   private adjustPosition() {
     const { item } = this;
     if (!item) return;
@@ -155,6 +176,8 @@ export default class EditableLabel extends Base {
       padding: Util.formatPadding(config.xmindNode.padding)
         .map((n: number) => `${n}px`)
         .join(" "),
+        paddingLeft: 0,
+        paddingRight: 0,
     });
   }
 
@@ -167,12 +190,14 @@ export default class EditableLabel extends Base {
     if (isLabelEqual(text, this.originalLabel)) {
       return;
     }
+    item.update({
+      label: this.originalLabel
+    })
     command.execute("update", {
       id: item.getID(),
       updateModel: {
         label: text,
       },
-      forceLayout: true,
     });
   }
 
@@ -213,6 +238,13 @@ export default class EditableLabel extends Base {
       this.editorEl,
       "blur",
       this.onBlur.bind(this)
+    );
+
+    this.bindListener(
+      "inputInput",
+      this.editorEl,
+      "input",
+      this.adjustGraphSize.bind(this)
     );
 
     this.bindListener(

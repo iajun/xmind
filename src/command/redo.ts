@@ -1,5 +1,6 @@
 import Graph from '../graph';
 import { ICommand } from '../types';
+import { CTRL_KEY } from '../utils';
 import CommandManager from './manager';
 
 class redoCommand implements ICommand<{}> {
@@ -11,8 +12,7 @@ class redoCommand implements ICommand<{}> {
   params= {}
 
   shortcuts= [
-    ['metaKey', 'shiftKey', 'z'],
-    ['ctrlKey', 'shiftKey', 'z'],
+    [CTRL_KEY, 'shiftKey', 'z'],
   ]
 
   constructor(graph: Graph, manager: CommandManager) {
