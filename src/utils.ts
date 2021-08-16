@@ -16,7 +16,7 @@ export const fittingString = (
   maxWidth: number,
   fontSize: number
 ) => {
-  if (!text) return '';
+  if (!text) return "";
   let currentWidth = 0;
   let res = "";
   let tmp = "";
@@ -75,19 +75,19 @@ export const isLabelEqual = (t1: string, t2: string) => {
 };
 
 function isMacintosh() {
-  return navigator.platform.indexOf('Mac') > -1
+  return navigator.platform.indexOf("Mac") > -1;
 }
 
-export const CTRL_KEY = isMacintosh ? 'metaKey' : 'ctrlKey'
+export const CTRL_KEY = isMacintosh ? "metaKey" : "ctrlKey";
 
 export const onResize = (graph: IGraph, cb: () => void) => {
   const debounced = _.throttle(cb, 60);
-  window.addEventListener('resize', debounced)
+  window.addEventListener("resize", debounced);
 
   graph.on(EditorEvent.onBeforeDestroy, () => {
-    window.removeEventListener('resize' ,debounced)
-  })
-}
+    window.removeEventListener("resize", debounced);
+  });
+};
 
 export const isFired = (shortcuts: string[] | string[][], e) => {
   return shortcuts.some((shortcut: string | string[]) => {
@@ -114,4 +114,31 @@ export const isFired = (shortcuts: string[] | string[][], e) => {
     }
     return false;
   });
-}
+};
+
+export const parseContentEditableStringToPlainText = (
+  childNodes: NodeListOf<Node>
+) => {
+  let text = "";
+  Array.from(childNodes).forEach((childNode, i) => {
+    if (i === childNodes.length && childNode.nodeName === 'BR') {
+      return;
+    }
+    if (childNode.nodeType === 3) {
+      text += childNode.textContent;
+    } else if (childNode.nodeName === "BR") {
+      text += "\n";
+    } else if (childNode.nodeName === "DIV") {
+      text += "\n";
+      if (
+        !(
+          childNode.childNodes.length === 1 &&
+          childNode.childNodes[0].nodeName === "BR"
+        )
+      ) {
+        text += childNode.textContent;
+      }
+    }
+  });
+  return text;
+};

@@ -8,7 +8,12 @@ import {
 import { modifyCSS, createDom } from "@antv/dom-util";
 import { Item } from "@antv/g6-core";
 import Base from "@antv/g6-plugin/lib/base";
-import { getLabelByModel, isFired, isLabelEqual } from "../utils";
+import {
+  getLabelByModel,
+  isFired,
+  isLabelEqual,
+  parseContentEditableStringToPlainText,
+} from "../utils";
 import config from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
@@ -16,23 +21,23 @@ import Graph from "../graph";
 export type EditableLabelConfig = {
   shortcuts?: string[] | string[][];
   shouldBegin?: (item: INode) => boolean;
-}
+};
 
 export default class EditableLabel extends Base {
   private editorEl!: HTMLDivElement;
   private wrapperEl!: HTMLDivElement;
   private container!: HTMLDivElement;
-  private originalTextRect: any
+  private originalTextRect: any;
   private graph!: Graph;
   private item?: INode | null;
   private originalLabel: string = "";
 
   getDefaultCfgs() {
     return {
-      shortcuts: [ ['metaKey', 'Enter'] ],
+      shortcuts: [["metaKey", "Enter"]],
       shouldBegin() {
         return true;
-      }
+      },
     } as EditableLabelConfig;
   }
 
@@ -50,7 +55,12 @@ export default class EditableLabel extends Base {
 
   onKeyUp(e: IG6GraphEvent) {
     const selectedNode = this.graph.getSelectedNodes()[0];
-    if (!selectedNode || selectedNode.hasState(ItemState.Editing) || !isFired(this.get('shortcuts'), e)) return;
+    if (
+      !selectedNode ||
+      selectedNode.hasState(ItemState.Editing) ||
+      !isFired(this.get("shortcuts"), e)
+    )
+      return;
     this.onShow(selectedNode);
   }
 
@@ -129,20 +139,18 @@ export default class EditableLabel extends Base {
     });
   }
 
-  adjustGraphSize(e) {
-    const text = e.target.textContent;
+  private adjustGraphSize() {
     const { clientWidth: width, clientHeight: height } = this.editorEl;
+    const text = parseContentEditableStringToPlainText(
+      this.editorEl.childNodes
+    );
     const { item } = this;
-    if (!this.originalTextRect) {
-      const bBox = item.getBBox();
-      this.originalTextRect = { width, height, itemWidth: bBox.width, itemHeight: bBox.height };
-    }
     const { lastRect } = this.originalTextRect;
     if (lastRect && width === lastRect.width && height === lastRect.height) {
       return;
     }
     item.update({
-      label: text
+      label: text,
     });
     this.graph.layout();
     this.adjustPosition();
@@ -159,15 +167,15 @@ export default class EditableLabel extends Base {
 
     const matrix = graph.getGroup().getMatrix();
     const containerPoint = Util.applyMatrix(item.getBBox(), matrix);
-    const labelBBox = labelShape.getBBox()
-    
+    const labelBBox = labelShape.getBBox();
+
     const matrixString = [
       matrix[0],
       matrix[1],
       matrix[3],
       matrix[4],
       containerPoint.x + labelBBox.x,
-      containerPoint.y 
+      containerPoint.y,
     ].join();
 
     modifyCSS(this.wrapperEl, {
@@ -176,23 +184,25 @@ export default class EditableLabel extends Base {
       padding: Util.formatPadding(config.xmindNode.padding)
         .map((n: number) => `${n}px`)
         .join(" "),
-        paddingLeft: 0,
-        paddingRight: 0,
+      paddingLeft: 0,
+      paddingRight: 0,
     });
   }
 
   private onBlur() {
-    const { item, editorEl } = this;
+    const { item } = this;
     if (!item) return;
 
     const command = this.graph.get("command");
-    const text = editorEl.innerText.trimEnd();
+    const text = parseContentEditableStringToPlainText(
+      this.editorEl.childNodes
+    ).trimEnd();
     if (isLabelEqual(text, this.originalLabel)) {
       return;
     }
     item.update({
-      label: this.originalLabel
-    })
+      label: this.originalLabel,
+    });
     command.execute("update", {
       id: item.getID(),
       updateModel: {
@@ -202,7 +212,7 @@ export default class EditableLabel extends Base {
   }
 
   private onShow(item: INode) {
-    const shouldBegin = this.get('shouldBegin');
+    const shouldBegin = this.get("shouldBegin");
     if (!shouldBegin(item)) return;
     this.item = item;
 
@@ -231,6 +241,15 @@ export default class EditableLabel extends Base {
     this.unbindAllListeners();
 
     this.editorEl.focus();
+    const bBox = item.getBBox();
+    this.originalTextRect = {
+      itemWidth: bBox.width,
+      itemHeight: bBox.height,
+      lastRect: {
+        width: this.editorEl.clientWidth,
+        height: this.editorEl.clientHeight,
+      },
+    };
     document.execCommand("selectAll", false);
 
     this.bindListener(

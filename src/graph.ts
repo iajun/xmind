@@ -5,7 +5,6 @@ import {
   INode,
   TreeGraph,
   TreeGraphData,
-  Util,
 } from "@antv/g6";
 import { Item } from "./types";
 import _ from "lodash";

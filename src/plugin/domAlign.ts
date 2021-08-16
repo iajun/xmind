@@ -10,7 +10,7 @@ export type Align = "topLeft" | "topRight" | "topMiddle";
 
 export type DomAlignConfig = {
   shouldBegin?: (e: IG6GraphEvent) => boolean;
-  onHide?: (e: MouseEvent) => void;
+  onHide?: (item: INode) => void;
   alignConfig?: (e: IG6GraphEvent) => Align;
   placement?: keyof typeof BuiltInPlacements
   trigger?: "click" | "hover";
@@ -158,14 +158,13 @@ export default class DomAlign extends Base {
   private outerClick(e) {
     const el = this.wrapperEl;
     
-    if (!e.target.contains(el)) {
+    if (!e.target.contains(el) && this.item) {
       this.onHide();
-      this.get('onHide')(e)
     }
   }
 
   private onHide() {
-    if (!this.item) return;
+    this.get('onHide')(this.item)
 
     this.graph.off("wheel", this.adjustPosition);
 

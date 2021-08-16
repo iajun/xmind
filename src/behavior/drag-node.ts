@@ -177,7 +177,6 @@ const DragNodeBehavior: BehaviorOption = {
 
       this.lastClosetItem = this.closestItem;
       this.placeChildren(e, this.placeholderModel);
-      // console.log(this.delegateRect);
     },
     30,
     {
@@ -225,8 +224,6 @@ const DragNodeBehavior: BehaviorOption = {
     const { el, model, graph } = this;
     el.removeEventListener("mousemove", this.onDragging);
     el.removeEventListener("mouseup", this.onDragEnd);
-
-    console.log("end");
 
     if (this.delegateRect) {
       this.delegateRect.remove();

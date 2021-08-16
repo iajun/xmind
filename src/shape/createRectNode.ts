@@ -57,6 +57,7 @@ export const createRectNode = (
           x: width / 2,
           y: height / 2,
           lineHeight,
+          fontFamily: 'PingFang SC',
           textBaseline: "middle",
           textAlign: "center",
           fontSize,

@@ -146,6 +146,7 @@ const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => Mod
           textBaseline: "middle",
           textAlign: "left",
           fontSize,
+          fontFamily: 'PingFang SC',
           fill: "#333",
           text: label,
           lineHeight,
