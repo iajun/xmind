@@ -117,14 +117,21 @@ export const isFired = (shortcuts: string[] | string[][], e) => {
   });
 };
 
-export const parseContentEditableStringToPlainText = (
-  html: string
-) => {
-  return html.replace(/<br>$/, '').replace(/\n<br>$/, '').replace(/\n\n$/, '\n').replaceAll('<br>', '\n');
+export const parseContentEditableStringToPlainText = (html: string) => {
+  return html
+    .replace(/<br>$/, "")
+    .replace(/\n<br>$/, "")
+    .replace(/\n\n$/, "\n")
+    .replaceAll("<br>", "\n");
 };
 
 export const cloneTree = <
-  T extends { children?: T[]; nextId: string | null; parentId: string | null; id: string }
+  T extends {
+    children?: T[];
+    nextId: string | null;
+    parentId: string | null;
+    id: string;
+  }
 >(
   tree: T,
   forEachItem?: (item: T) => T
@@ -132,7 +139,7 @@ export const cloneTree = <
   const newTree = _.cloneDeep(tree);
   Util.traverseTree(newTree, (item: T) => {
     const id = v4();
-    forEachItem && forEachItem(item)
+    forEachItem && forEachItem(item);
     item.id = id;
   });
 
@@ -148,14 +155,13 @@ export const cloneTree = <
 };
 
 export function setCaretToEnd(contentEditableElement: HTMLDivElement) {
-  var range,selection;
-  if(document.createRange)//Firefox, Chrome, Opera, Safari, IE 9+
-  {
-      range = document.createRange();//Create a range (a range is a like the selection but invisible)
-      range.selectNodeContents(contentEditableElement);//Select the entire contents of the element with the range
-      range.collapse(false);//collapse the range to the end point. false means collapse to end rather than the start
-      selection = window.getSelection();//get the selection object (allows you to change selection)
-      selection.removeAllRanges();//remove any selections already made
-      selection.addRange(range);//make the range you have just created the visible selection
+  if (!document.createRange) {
+    return;
   }
+  const range = document.createRange(); //Create a range (a range is a like the selection but invisible)
+  range.selectNodeContents(contentEditableElement); //Select the entire contents of the element with the range
+  range.collapse(false); //collapse the range to the end point. false means collapse to end rather than the start
+  const selection = window.getSelection(); //get the selection object (allows you to change selection)
+  selection.removeAllRanges(); //remove any selections already made
+  selection.addRange(range); //make the range you have just created the visible selection
 }

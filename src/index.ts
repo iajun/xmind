@@ -9,6 +9,4 @@ export {default as DomAlign } from './plugin/domAlign'
 
 export default createGraph
 
-import './test'
-
 export const Global = config;
