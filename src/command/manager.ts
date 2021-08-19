@@ -37,11 +37,11 @@ class CommandManager {
     this.el = el;
   }
 
-  unFocus() {
+  disable() {
     this.editorFocused = false;
   }
 
-  focus() {
+  enable() {
     this.editorFocused = true;
   }
 
@@ -80,7 +80,7 @@ class CommandManager {
 
     this.graph.emit(EditorEvent.onAfterExecuteCommand, command);
 
-    this.editorFocused = true;
+    this.enable()
 
     if (command.canUndo()) {
       const { commandQueue, commandIndex } = this;

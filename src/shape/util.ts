@@ -62,7 +62,7 @@ export const getSizeByConfig = (config, cfg) => {
   const label = fittingString(getLabelByModel(cfg), maxWidth, fontSize);
 
   const textWidth = Math.max(fittingLabelWidth(label, fontSize), minWidth);
-  
+
   const width =
     (textWidth + fontSize > maxWidth ? maxWidth : textWidth) +
     formattedPadding[1] +

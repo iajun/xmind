@@ -69,4 +69,17 @@ export default {
       textColor: "#333",
     },
   } as NodeConfig,
+  placeholderNode: {
+    labelStyle: {
+      fontSize: 14,
+      minWidth: 60,
+      lineHeight: 20,
+      fill: "#fff",
+    },
+    wrapperStyle: {
+      fill: "#587EF7",
+      lineWidth: 0,
+    },
+    padding: [10, 20],
+  } as NodeConfig,
 };

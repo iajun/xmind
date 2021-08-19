@@ -7,7 +7,7 @@ G6.registerNode("xmindNode", createLineNode( "xmindNode",config.xmindNode));
 G6.registerNode("rootNode", createRectNode( "rootNode",config.rootNode));
 G6.registerNode(
   "dragPlaceholderNode",
-  createRectNode("dragPlaceholderNode", config.rootNode)
+  createRectNode("dragPlaceholderNode", config.placeholderNode)
 );
 
 export { createRectNode, createLineNode };

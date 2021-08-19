@@ -137,7 +137,7 @@ export default class DomAlign extends Base {
     if (this.el) {
       this.wrapperEl.removeChild(this.el)
     }
-    this.el = this.get("getContent")(item, this);
+    this.el = this.get("getContent")(e, this);
     this.wrapperEl.appendChild(this.el);
 
     this.item = item as INode;

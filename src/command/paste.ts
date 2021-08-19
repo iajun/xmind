@@ -1,13 +1,12 @@
 import { ICommand, TreeGraphData } from "../types";
 import Graph from "../graph";
-import { Util } from "@antv/g6";
-import { v4 } from "uuid";
 import _ from "lodash";
-import { CTRL_KEY } from "../utils";
+import { cloneTree, CTRL_KEY } from "../utils";
 
 export interface PasteCommandParams {
   parentId: string;
   newModel: TreeGraphData;
+  mapItem?: (item: TreeGraphData) => TreeGraphData;
 }
 
 class PasteCommand implements ICommand<PasteCommandParams> {
@@ -16,8 +15,8 @@ class PasteCommand implements ICommand<PasteCommandParams> {
 
   params = {
     parentId: "",
-    newModel: {} as TreeGraphData,
-  };
+    newModel: {},
+  } as PasteCommandParams;
 
   shortcuts = [
     [CTRL_KEY, "v"],
@@ -50,19 +49,7 @@ class PasteCommand implements ICommand<PasteCommandParams> {
 
   init() {
     const { graph } = this;
-    const newModel = _.cloneDeep(graph.get("clipboard")?.model);
-    Util.traverseTree(newModel, (item: TreeGraphData) => {
-      item.id = v4();
-    });
-    Util.traverseTree(newModel, (item) => {
-      if (item.children && item.children.length) {
-        item.children.forEach((child, i) => {
-          child.nextId = item.children[i + 1] ? item.children[i + 1].id : null;
-          child.parentId = item.id;
-        });
-      }
-    });
-    this.params.newModel = newModel;
+    this.params.newModel = cloneTree(graph.get("clipboard").model, this.params.mapItem)
   }
 
   execute() {

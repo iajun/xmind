@@ -13,6 +13,7 @@ import {
   isFired,
   isLabelEqual,
   parseContentEditableStringToPlainText,
+  setCaretToEnd,
 } from "../utils";
 import config from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
@@ -77,7 +78,7 @@ export default class EditableLabel extends Base {
     this.editorEl = createDom(
       `<div class=${
         className || "g6-editable-label"
-      } contenteditable='true'></div>`
+      } contenteditable='plaintext-only'></div>`
     );
     this.wrapperEl = createDom(`<div class='g6-editable' />`);
     this.wrapperEl.appendChild(this.editorEl);
@@ -141,9 +142,10 @@ export default class EditableLabel extends Base {
 
   private adjustGraphSize() {
     const { clientWidth: width, clientHeight: height } = this.editorEl;
-    const text = parseContentEditableStringToPlainText(
-      this.editorEl.childNodes
-    );
+    
+    const html = this.editorEl.innerHTML
+    const text = parseContentEditableStringToPlainText(html);
+    
     const { item } = this;
     const { lastRect } = this.originalTextRect;
     if (lastRect && width === lastRect.width && height === lastRect.height) {
@@ -195,8 +197,9 @@ export default class EditableLabel extends Base {
 
     const command = this.graph.get("command");
     const text = parseContentEditableStringToPlainText(
-      this.editorEl.childNodes
-    ).trimEnd();
+      this.editorEl.innerHTML
+    ).trim();
+    
     if (isLabelEqual(text, this.originalLabel)) {
       return;
     }
@@ -240,7 +243,6 @@ export default class EditableLabel extends Base {
 
     this.unbindAllListeners();
 
-    this.editorEl.focus();
     const bBox = item.getBBox();
     this.originalTextRect = {
       itemWidth: bBox.width,
@@ -250,7 +252,8 @@ export default class EditableLabel extends Base {
         height: this.editorEl.clientHeight,
       },
     };
-    document.execCommand("selectAll", false);
+
+    setCaretToEnd(this.editorEl)
 
     this.bindListener(
       "inputBlur",

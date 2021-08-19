@@ -1,3 +1,4 @@
+import { v4 } from "uuid";
 import G6, {
   ComboConfig,
   EdgeConfig,
@@ -117,28 +118,44 @@ export const isFired = (shortcuts: string[] | string[][], e) => {
 };
 
 export const parseContentEditableStringToPlainText = (
-  childNodes: NodeListOf<Node>
+  html: string
 ) => {
-  let text = "";
-  Array.from(childNodes).forEach((childNode, i) => {
-    if (i === childNodes.length && childNode.nodeName === 'BR') {
-      return;
-    }
-    if (childNode.nodeType === 3) {
-      text += childNode.textContent;
-    } else if (childNode.nodeName === "BR") {
-      text += "\n";
-    } else if (childNode.nodeName === "DIV") {
-      text += "\n";
-      if (
-        !(
-          childNode.childNodes.length === 1 &&
-          childNode.childNodes[0].nodeName === "BR"
-        )
-      ) {
-        text += childNode.textContent;
-      }
+  return html.replace(/<br>$/, '').replace(/\n<br>$/, '').replace(/\n\n$/, '\n').replaceAll('<br>', '\n');
+};
+
+export const cloneTree = <
+  T extends { children?: T[]; nextId: string | null; parentId: string | null; id: string }
+>(
+  tree: T,
+  forEachItem?: (item: T) => T
+) => {
+  const newTree = _.cloneDeep(tree);
+  Util.traverseTree(newTree, (item: T) => {
+    const id = v4();
+    forEachItem && forEachItem(item)
+    item.id = id;
+  });
+
+  Util.traverseTree(newTree, (item: T) => {
+    if (item.children && item.children.length) {
+      item.children.forEach((child, i) => {
+        child.nextId = item.children[i + 1] ? item.children[i + 1].id : null;
+        child.parentId = item.id;
+      });
     }
   });
-  return text;
+  return newTree;
 };
+
+export function setCaretToEnd(contentEditableElement: HTMLDivElement) {
+  var range,selection;
+  if(document.createRange)//Firefox, Chrome, Opera, Safari, IE 9+
+  {
+      range = document.createRange();//Create a range (a range is a like the selection but invisible)
+      range.selectNodeContents(contentEditableElement);//Select the entire contents of the element with the range
+      range.collapse(false);//collapse the range to the end point. false means collapse to end rather than the start
+      selection = window.getSelection();//get the selection object (allows you to change selection)
+      selection.removeAllRanges();//remove any selections already made
+      selection.addRange(range);//make the range you have just created the visible selection
+  }
+}

@@ -33,7 +33,7 @@ type GraphOptions = Pick<
   data?: TreeGraphData;
   commands?: CommandOption[];
   editorLabelOptions?: EditableLabelConfig;
-  autoFit?: boolean
+  autoFit?: boolean;
 };
 
 let commandManager: CommandManager;
@@ -51,13 +51,19 @@ function getDefaultOptions(): IGraphOptions {
         const nodeConfig = config.global.registeredNodes[node.type];
         if (!nodeConfig) return 0;
         const { mapCfg, options } = nodeConfig;
-        return getSizeByConfig(options, typeof mapCfg === 'function' ? mapCfg(node) : node)[0];
+        return getSizeByConfig(
+          options,
+          typeof mapCfg === "function" ? mapCfg(node) : node
+        )[0];
       },
       getHeight: (node) => {
         const nodeConfig = config.global.registeredNodes[node.type];
         if (!nodeConfig) return 0;
         const { mapCfg, options } = nodeConfig;
-        return getSizeByConfig(options, typeof mapCfg === 'function' ? mapCfg(node) : node)[1];
+        return getSizeByConfig(
+          options,
+          typeof mapCfg === "function" ? mapCfg(node) : node
+        )[1];
       },
       getSide: () => {
         return "right";
@@ -72,8 +78,8 @@ function getDefaultOptions(): IGraphOptions {
     },
     modes: {
       default: [
-        "click-item",
-        "drag-node",
+        { type: "click-item" },
+        { type: "drag-node" },
         {
           type: "scroll-canvas",
         },
@@ -116,7 +122,14 @@ function shouldBeginCollapseExpand(e: IG6GraphEvent) {
 }
 
 export function createGraph(options: GraphOptions) {
-  const { global, data,  commands, autoFit,editorLabelOptions = {}, ...rest } = options;
+  const {
+    global,
+    data,
+    commands,
+    autoFit,
+    editorLabelOptions = {},
+    ...rest
+  } = options;
   if (global) setGlobal(global);
   const finalOptions = _.merge(
     {},
@@ -133,9 +146,9 @@ export function createGraph(options: GraphOptions) {
 
   if (autoFit) {
     onResize(graph, () => {
-      const el = graph.get('container');
+      const el = graph.get("container");
       graph.changeSize(el.clientWidth, el.clientHeight);
-    })
+    });
   }
 
   graph.changeData(data);

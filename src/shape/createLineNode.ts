@@ -14,12 +14,16 @@ import { drawUnfoldButton, drawFoldButton, getSizeByConfig } from "./util";
 const NODE_BOTTOM_LINE = "node-bottom-line";
 export const FOLD_BUTTON_GROUP = "node-fold-button";
 
-const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => ModelConfig): ShapeOptions => {
+const createLineNode = (
+  name: string,
+  options: NodeConfig,
+  mapCfg?: (cfg) => ModelConfig
+): ShapeOptions => {
   setGlobal({
     registeredNodes: {
-      [name]: { options , mapCfg}
-    }
-  })
+      [name]: { options, mapCfg },
+    },
+  });
   return {
     options,
 
@@ -33,6 +37,7 @@ const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => Mod
       items.forEach((item) => group.removeChild(item, true));
       const buttonGroup = group.addGroup({
         name: FOLD_BUTTON_GROUP,
+        zIndex: 4
       });
       const { collapsed } = model;
       if (collapsed) {
@@ -45,14 +50,6 @@ const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => Mod
       const [width, height] = this.getSize!(model);
 
       buttonGroup.translate(width, height);
-    },
-
-    afterUpdate(model: any, item) {
-      if (!this.hasButton(model)) return;
-      const container = item?.getContainer();
-      if (!container) return;
-
-      this.drawButton(model, container);
     },
 
     setState(key?: string, value?: string | boolean, item?: Item) {
@@ -81,7 +78,7 @@ const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => Mod
       const formattedPadding = Util.formatPadding(padding);
       const label = fittingString(getLabelByModel(cfg), maxWidth, fontSize);
       if (mapCfg) {
-        cfg = mapCfg(cfg)
+        cfg = mapCfg(cfg);
       }
       let textWidth = Math.max(fittingLabelWidth(label, fontSize), minWidth);
       if (textWidth + fontSize >= maxWidth) {
@@ -99,6 +96,7 @@ const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => Mod
           radius: 4,
           ...wrapperStyle,
         },
+        zIndex: 1,
       });
 
       group.addShape("path", {
@@ -111,29 +109,70 @@ const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => Mod
             ["H", width],
           ],
         },
+        zIndex: 2,
       });
 
       const globalIconConfig = config.global.icon;
 
-      const {leftIcons = [] as any[], rightIcons = [] as any[]} = cfg;
+      const { leftIcons = [] as any[], rightIcons = [] as any[] } = cfg;
 
       let baseLeft = formattedPadding[3];
 
-      ((leftIcons) as any[]).forEach((iconConfig, i) => {
+      (leftIcons as any[]).forEach((iconConfig, i) => {
         group.addShape("text", {
           name: iconConfig.text,
           attrs: {
             x:
-              baseLeft + i * (globalIconConfig.fontSize  + globalIconConfig.gap),
+              baseLeft + i * (globalIconConfig.fontSize + globalIconConfig.gap),
             y: height / 2,
             textBaseline: "middle",
             ...globalIconConfig,
             ...iconConfig,
           },
+          zIndex: 3,
         });
       });
 
-      baseLeft += (leftIcons as any[]).length * (globalIconConfig.fontSize + globalIconConfig.gap);
+      baseLeft +=
+        (leftIcons as any[]).length *
+        (globalIconConfig.fontSize + globalIconConfig.gap);
+
+      const isUnderLine =
+        (cfg.itemStyle as any)?.textDecoration === "underline";
+      const isDeleteLine =
+        (cfg.itemStyle as any)?.textDecoration === "deleteLine";
+      if (isUnderLine || isDeleteLine) {
+        _.range(0, textHeight / lineHeight).forEach((_a, i) => {
+          group.addShape("path", {
+            attrs: {
+              path: [
+                [
+                  "M",
+                  baseLeft,
+                  lineHeight * (i + (isUnderLine ? 1 : 0.5)) +
+                    formattedPadding[0],
+                ],
+                ["H", textWidth + baseLeft],
+              ],
+              stroke: "#333",
+              lineWidth: 2,
+            },
+            zIndex: 3,
+          });
+        });
+      }
+
+      group.addShape("rect", {
+        draggable: true,
+        attrs: {
+          width: textWidth,
+          height: textHeight,
+          x: baseLeft,
+          y: formattedPadding[0],
+          ...((cfg.itemStyle || {}) as object),
+        },
+        zIndex: 2,
+      });
 
       group.addShape("text", {
         draggable: true,
@@ -146,33 +185,40 @@ const createLineNode = (name: string, options: NodeConfig, mapCfg?: (cfg) => Mod
           textBaseline: "middle",
           textAlign: "left",
           fontSize,
-          fontFamily: 'PingFang SC',
+          fontFamily: "PingFang SC",
           fill: "#333",
           text: label,
           lineHeight,
           ...labelStyle,
+          ..._.omit((cfg.itemStyle || {}) as object, ["fill"]),
         },
+        zIndex: 3,
       });
 
       baseLeft += textWidth;
 
-
-      ((rightIcons) as any[]).forEach((iconConfig, i) => {
+      (rightIcons as any[]).forEach((iconConfig, i) => {
         group.addShape("text", {
           name: iconConfig.text,
           attrs: {
-            x: baseLeft + (i + 1) * globalIconConfig.gap + i * globalIconConfig.fontSize,
+            x:
+              baseLeft +
+              (i + 1) * globalIconConfig.gap +
+              i * globalIconConfig.fontSize,
             y: height / 2,
             textBaseline: "middle",
             ...globalIconConfig,
             ...iconConfig,
           },
+          zIndex: 3,
         });
       });
 
-      if (!this.hasButton(cfg)) return keyShape;
-      this.drawButton(cfg, group);
+      if (this.hasButton(cfg)) {
+        this.drawButton(cfg, group);
+      }
 
+      group.sort();
       return keyShape;
     },
     getSize(cfg) {

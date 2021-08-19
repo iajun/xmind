@@ -11,19 +11,29 @@ type NodePosition = {
   x: number;
   y: number;
   id: string;
+  parentId: number;
   label: string;
   depth: number;
 };
 
-const MAX_THRESHOLD = 100;
-
-const getPlaceholderModel = () => ({
+const getPlaceholderModel = (itemModel) => ({
   id: "dragPlaceholderNode",
   type: "dragPlaceholderNode",
   label: "",
+  parentId: itemModel.parentId,
+  nextId: itemModel.nextId,
 });
 
 const compute = {
+  applyOffset: (
+    point: { x: number; y: number },
+    offset: { offsetX: number; offsetY: number }
+  ) => {
+    return {
+      x: point.x - offset.offsetX,
+      y: point.y - offset.offsetY,
+    };
+  },
   containerCenter: (graph: Graph, item: INode) => {
     const container = item.getContainer();
     const bBox: BBox = container.getBBox();
@@ -36,54 +46,101 @@ const compute = {
   distance: ([x1, y1], [x2, y2]) => {
     return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);
   },
-  closeItem: (list: NodePosition[], x: number, y: number) => {
-    let closetParent: NodePosition | null = null;
+  closeItem: (
+    list: NodePosition[],
+    x: number,
+    y: number,
+    maxThreshold?: number
+  ) => {
+    let closestParent: NodePosition | null = null;
     let lastMin = Number.MAX_SAFE_INTEGER;
+    const map = _.keyBy(list, "id");
+
     list.forEach((item) => {
-      if (x <= item.x + item.width) return;
-      if (closetParent && closetParent.depth > item.depth) return;
-      const xDis = x - (item.x + item.width);
-      if (xDis > MAX_THRESHOLD) return;
-      if (xDis < lastMin) {
-        closetParent = item;
-        lastMin = xDis;
+      if (x <= item.x + item.width) {
+        return;
+      }
+      if (closestParent && closestParent.depth > item.depth) {
+        return;
+      }
+      const dis = compute.distance(
+        [x, y],
+        [item.x + item.width, item.y + item.height / 2]
+      );
+      if (dis < lastMin) {
+        closestParent = item;
+        lastMin = dis;
       }
     });
 
-    if (!closetParent) return { parent: null, sibling: null };
+    if (!closestParent) return { parent: null, sibling: null };
 
     const siblingList = list.filter(
-      (item) => item.depth === closetParent.depth + 1
+      (item) => item.depth === closestParent.depth + 1 && item.x < x
     );
 
-    let closetSibling = null;
-    lastMin = Number.MAX_SAFE_INTEGER;
+    let closestNext = null,
+      closestPrev = null,
+      lastNextMin = Number.MAX_SAFE_INTEGER,
+      lastPrevMin = lastNextMin;
     siblingList.forEach((item) => {
-      const dis = compute.distance([item.x, item.y], [x, y]);
-      if (dis > MAX_THRESHOLD * MAX_THRESHOLD || dis >= lastMin) return;
-      lastMin = dis;
-      closetSibling = item;
+      let dis = y - item.y;
+      // cursor under the item
+      if (dis > 0) {
+        if (dis >= lastPrevMin) return;
+        lastPrevMin = dis;
+        closestPrev = item;
+        // cursor above the item
+      } else {
+        dis = -dis;
+        if (dis >= lastNextMin) return;
+        lastNextMin = dis;
+        closestNext = item;
+      }
     });
 
+    if (closestPrev && closestNext) {
+      if (lastNextMin > lastPrevMin) {
+        if (closestPrev.parentId !== closestParent.id) {
+          closestParent = map[closestPrev.parentId];
+          closestNext = null;
+        } else if (closestNext.parentId !== closestParent.id) {
+          closestNext = null;
+        }
+      } else {
+        if (closestNext.parentId !== closestParent.id) {
+          closestParent = map[closestNext.parentId];
+        }
+      }
+    }
+
+    if (maxThreshold) {
+      if (x - closestParent.x - closestParent.width > maxThreshold) {
+        closestParent = null;
+      }
+      if (closestNext && y - closestNext.y > maxThreshold) {
+        closestNext = null;
+      }
+    }
+
     return {
-      parent: closetParent,
-      sibling: closetSibling,
-    };
-  },
-  applyOffset: (
-    point: { x: number; y: number },
-    offset: { offsetX: number; offsetY: number }
-  ) => {
-    return {
-      x: point.x - offset.offsetX,
-      y: point.y - offset.offsetY,
+      parent: closestParent,
+      sibling: closestNext,
     };
   },
 };
 
 const DragNodeBehavior: BehaviorOption = {
   getDefaultCfg(): object {
-    return {};
+    return {
+      maxThreshold: 300,
+      shouldDragTo() {
+        return true;
+      },
+      shouldDragFrom() {
+        return true;
+      },
+    };
   },
 
   getEvents(): { [key in G6Event]?: string } {
@@ -94,6 +151,7 @@ const DragNodeBehavior: BehaviorOption = {
 
   onDragStart(e: IG6GraphEvent) {
     if (!e.item) return;
+    if (!this.get("shouldDragFrom")(e.item)) return;
 
     const graph = this.get("graph") as Graph,
       el = graph.get("container");
@@ -119,11 +177,13 @@ const DragNodeBehavior: BehaviorOption = {
       ..._.pick(itemBBox, ["width", "height"]),
     };
 
-    this.placeholderModel = getPlaceholderModel();
+    this.placeholderModel = getPlaceholderModel(model);
     graph.removeChild(this.model.id);
   },
 
   cacheAllPoints() {
+    this.nodePoints = [];
+
     this.get("graph").findAll("node", (node) => {
       const bBox = node.getContainer().getBBox();
       const matrix = node.getContainer().getMatrix();
@@ -132,12 +192,20 @@ const DragNodeBehavior: BehaviorOption = {
       if (model.id === this.model.id || model.id === this.placeholderModel.id)
         return false;
       this.nodePoints.push({
+        // node width
         width: bBox.width,
+        // node height
         height: bBox.height,
+        // node left x
         x: matrix[6],
+        // node top y
         y: matrix[7],
-        id: node.getID(),
-        label: node.getModel().label,
+        // node id
+        id: model.id,
+        // node parent id
+        parentId: model.parentId,
+        // node label
+        label: model.label,
         depth: model.depth,
       });
       return false;
@@ -147,36 +215,56 @@ const DragNodeBehavior: BehaviorOption = {
   onDragging: _.throttle(
     function (e: MouseEvent) {
       const graph: Graph = this.graph;
-      this.cacheAllPoints();
+      if (!this.nodePoints) {
+        this.cacheAllPoints();
+      }
 
-      const point = compute.applyOffset(
-        graph.getPointByClient(e.clientX, e.clientY),
-        this.itemPosition
+      const point = graph.getPointByClient(e.clientX, e.clientY);
+
+      const placeholderItem = graph.findById(this.placeholderModel.id);
+
+      const delegatePoint = compute.applyOffset(point, this.itemPosition);
+      this.updateDelegate(delegatePoint.x, delegatePoint.y);
+
+      if (placeholderItem) {
+        const bBox = placeholderItem.getBBox();
+        if (
+          point.x >= bBox.x &&
+          point.x <= bBox.x + bBox.width &&
+          point.y >= bBox.y &&
+          point.y <= bBox.y + bBox.height
+        )
+          return;
+      }
+
+      this.closestItem = compute.closeItem(
+        this.nodePoints,
+        point.x,
+        point.y,
+        this.get("maxThreshold")
       );
 
-      this.closetItem = compute.closeItem(this.nodePoints, point.x, point.y);
-
       const isEqual = (item1, item2) => {
-        return item1
-          ? item2
-            ? item1.id === item2.id
-            : false
-          : item2
-          ? false
-          : true;
+        if (+!!item1 ^ +!!item2) return false;
+        if (!item1 && !item2) return true;
+
+        return item1.id === item2.id;
       };
 
       if (
         this.lastClosetItem &&
+        this.closestItem.parent !== null &&
+        this.lastClosetItem.parent !== null &&
         isEqual(this.closestItem.parent, this.lastClosetItem.parent) &&
         isEqual(this.closestItem.sibling, this.lastClosetItem.sibling)
-      )
+      ) {
         return;
+      }
 
-      this.updateDelegate(point.x, point.y);
+      this.cacheAllPoints();
 
       this.lastClosetItem = this.closestItem;
-      this.placeChildren(e, this.placeholderModel);
+      this.placeChildren(this.placeholderModel);
     },
     30,
     {
@@ -184,44 +272,41 @@ const DragNodeBehavior: BehaviorOption = {
     }
   ),
 
-  placeChildren: function placeChildren(e: MouseEvent, model) {
-    const { graph, closetItem } = this;
-    const { parent, sibling } = closetItem;
+  computePlacePosition() {
+    const shouldDragTo = this.get("shouldDragTo");
+    const { graph, closestItem } = this;
+    const originalModel = this.model;
+    const { parent, sibling } = closestItem;
 
-    const hasChildren = (id) => {
-      const model = graph.findById(id).getModel();
-      return model.children && model.children.length;
-    };
+    if (!parent || (parent && !shouldDragTo(graph.findById(parent.id)))) {
+      return {
+        nextId: originalModel.nextId,
+        parentId: originalModel.parentId,
+      };
+    } else {
+      return {
+        parentId: parent.id,
+        nextId: sibling?.id || null,
+      };
+    }
+  },
 
-    const point = compute.applyOffset(
-      graph.getPointByClient(e.clientX, e.clientY),
-      this.itemPosition
-    );
+  placeChildren: function placeChildren(model) {
+    const { graph } = this;
 
     if (graph.findById(model.id)) {
       graph.removeChild(model.id);
     }
 
-    if (!parent) {
-      graph.addChild(model, model.parentId);
-    } else if (!sibling) {
-      if (hasChildren(parent.id)) {
-        graph.addChild(model, model.parentId);
-      } else {
-        graph.addChild(model, parent.id);
-      }
-    } else {
-      let nextId = sibling.y > point.y ? sibling.id : sibling.nextId;
-      if (!nextId) {
-        graph.addChild(model, parent.id);
-      } else {
-        graph.insertBefore(model, sibling.id);
-      }
-    }
+    graph.placeNode({
+      ...model,
+      ...this.computePlacePosition(),
+    });
   },
 
-  onDragEnd(e: MouseEvent) {
-    const { el, model, graph } = this;
+  onDragEnd() {
+    this.executeDragCommand();
+    const { el, graph } = this;
     el.removeEventListener("mousemove", this.onDragging);
     el.removeEventListener("mouseup", this.onDragEnd);
 
@@ -234,7 +319,17 @@ const DragNodeBehavior: BehaviorOption = {
       graph.removeChild(this.placeholderModel.id);
     }
 
-    this.placeChildren(e, model);
+    this.nodePoints = [];
+  },
+
+  executeDragCommand() {
+    const {nextId, parentId} = this.computePlacePosition();
+    const { model, graph } = this;
+    graph.get('command').execute('drag-node', {
+      model,
+      nextId,
+      parentId,
+    })
   },
 
   updateDelegate(x, y) {

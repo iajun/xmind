@@ -14,6 +14,7 @@ import MoveUpCommand from './moveUp'
 import MoveDownCommand from './moveDown'
 import MoveLeftCommand from './moveLeft'
 import MoveRightCommand from './moveRight'
+import DragCommand from './dragNode'
 import Graph from "../graph";
 import { ICommand } from "../types";
 
@@ -56,6 +57,7 @@ function createCommandManager(graph: Graph, commandOptions?: CommandOption[]) {
     new MoveDownCommand(graph),
     new MoveLeftCommand(graph),
     new MoveRightCommand(graph),
+    new DragCommand(graph),
   ];
 
   let resolvedCommands: ICommand<any>[] = [];

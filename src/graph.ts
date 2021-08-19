@@ -6,7 +6,7 @@ import {
   TreeGraph,
   TreeGraphData,
 } from "@antv/g6";
-import { Item } from "./types";
+import { Item, TreeGraphData as ITreeGraphData } from "./types";
 import _ from "lodash";
 
 class Graph extends TreeGraph {
@@ -33,6 +33,14 @@ class Graph extends TreeGraph {
 
   getLastSibling(id: string) {
     return this.findAll("node", (item) => item.getModel().nextId === id)[0];
+  }
+
+  placeNode(model: ITreeGraphData) {
+    if (model.nextId) {
+      this.insertBefore(model, model.nextId)
+    } else if (model.parentId) {
+      this.addChild(model, model.parentId)
+    }
   }
 
   insertBefore(model: TreeGraphData, id: string | Item) {
