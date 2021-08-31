@@ -1,11 +1,5 @@
 import { EditorEvent, ItemState } from "./constants";
-import {
-  GraphData,
-  IEdge,
-  INode,
-  TreeGraph,
-  TreeGraphData,
-} from "@antv/g6";
+import { GraphData, IEdge, INode, TreeGraph, TreeGraphData } from "@antv/g6";
 import { Item, TreeGraphData as ITreeGraphData } from "./types";
 import _ from "lodash";
 
@@ -35,11 +29,23 @@ class Graph extends TreeGraph {
     return this.findAll("node", (item) => item.getModel().nextId === id)[0];
   }
 
+  private ensureNodeExpanded(id) {
+    const item = this.findById(id);
+    if (!item) return;
+    const model = item.getModel();
+    if (model.collapsed) {
+      item.update({
+        collapsed: false,
+      });
+      this.layout();
+    }
+  }
+
   placeNode(model: ITreeGraphData) {
     if (model.nextId) {
-      this.insertBefore(model, model.nextId)
+      this.insertBefore(model, model.nextId);
     } else if (model.parentId) {
-      this.addChild(model, model.parentId)
+      this.addChild(model, model.parentId);
     }
   }
 
@@ -48,9 +54,12 @@ class Graph extends TreeGraph {
     const parentId = item.getModel().parentId as string | null;
     if (!parentId) return;
 
-    const children = _.cloneDeep(
-      this.findById(parentId).getModel().children
-    ) as TreeGraphData[] | null;
+    this.ensureNodeExpanded(parentId);
+
+    const parentItem = this.findById(parentId);
+    const children = _.cloneDeep(parentItem.getModel().children) as
+      | TreeGraphData[]
+      | null;
     if (!children) return;
 
     const nextSiblingModel = item.getModel();
@@ -74,8 +83,10 @@ class Graph extends TreeGraph {
 
   addChild(data: TreeGraphData, parent: string | Item): void {
     const parentId = typeof parent === "string" ? parent : parent.getID();
-    const parentItem =
-      typeof parent === "string" ? this.findById(parent) : parent;
+
+    if (!parentId) return;
+    this.ensureNodeExpanded(parentId);
+
     const lastChild = this.findAll("node", (item) => {
       const model = item.getModel();
       return model.parentId === parentId && model.nextId === null;
@@ -85,10 +96,6 @@ class Graph extends TreeGraph {
         nextId: data.id,
       });
     }
-    // unfold
-    parentItem.update({
-      collapsed: false,
-    });
 
     data.parentId = parentId;
     data.nextId = null;
@@ -158,6 +165,22 @@ class Graph extends TreeGraph {
         }
       });
     });
+  }
+
+  isInsideGraph(id: string) {
+    const item = this.findById(id);
+    if (!item) return false;
+    const bBox = this.findById(id).getBBox();
+    const point = this.getCanvasByPoint(bBox.x, bBox.y);
+    const width = this.getWidth(),
+      height = this.getHeight();
+
+    return !(
+      point.x + bBox.width > width ||
+      point.y + bBox.height > height ||
+      point.x < 0 ||
+      point.y < 0
+    );
   }
 }
 

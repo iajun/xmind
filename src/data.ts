@@ -6,6 +6,28 @@ const list: Omit<TreeGraphData, "children">[] = [
     parentId: null,
     nextId: null,
     label: "root node",
+    leftIcons: [
+      {
+        text: "\ue63f",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+      {
+        text: "\ue63e",
+        fill: "#333",
+      },
+    ],
     priority: 3,
   },
   {
@@ -13,6 +35,8 @@ const list: Omit<TreeGraphData, "children">[] = [
     parentId: "__1__",
     nextId: "__3__",
     label: "second first node",
+    description:
+      "descriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescriptiondescription",
     priority: 1,
     leftIcons: [
       {

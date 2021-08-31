@@ -5,7 +5,7 @@ import {
   fittingString,
   getLabelByModel,
 } from "../utils";
-import { getSizeByConfig } from "./util";
+import { drawNode, getSizeByConfig } from "./util";
 import _ from "lodash";
 import { ItemState } from "../constants";
 import { NodeConfig, setGlobal } from "../config";
@@ -17,55 +17,21 @@ export const createRectNode = (
 ): ShapeOptions => {
   setGlobal({
     registeredNodes: {
-      [name]: { options , mapCfg}
+      [name]: { options, mapCfg },
     },
   });
   return {
     options,
     draw(cfg, group: IGroup) {
-      const { labelStyle, wrapperStyle, padding } = options;
-      const { lineHeight, fontSize, maxWidth, minWidth } = labelStyle;
-      const label = fittingString(getLabelByModel(cfg), maxWidth, fontSize);
-      const formattedPadding = Util.formatPadding(padding);
-      const width =
-        Math.max(fittingLabelWidth(label, fontSize), minWidth) +
-        formattedPadding[1] +
-        formattedPadding[3];
-      const height =
-        fittingLabelHeight(label, lineHeight) +
-        formattedPadding[0] +
-        formattedPadding[2];
-
       if (mapCfg) {
         cfg = mapCfg(cfg);
       }
 
-      const keyShape = group.addShape("rect", {
-        attrs: {
-          x: 0,
-          y: 0,
-          width,
-          height,
-          radius: 8,
-          ...wrapperStyle,
-        },
-      });
+      console.log(this.getSize(cfg));
 
-      group.addShape("text", {
-        attrs: {
-          text: label,
-          x: width / 2,
-          y: height / 2,
-          lineHeight,
-          fontFamily: 'PingFang SC',
-          textBaseline: "middle",
-          textAlign: "center",
-          fontSize,
-          ...labelStyle,
-        },
-      });
-
-      return keyShape;
+      const keyshape = drawNode(group, cfg, options, this.getSize(cfg));
+      console.log(group.getChildren());
+      return keyshape;
     },
     setState(key?: string, value?: string | boolean, item?: Item) {
       if (!item) return;
@@ -80,7 +46,8 @@ export const createRectNode = (
       }
     },
     getSize(cfg) {
-      return getSizeByConfig(options, cfg);
+      const size = getSizeByConfig(options, cfg);
+      return [size.width, size.height];
     },
     getAnchorPoints() {
       return [

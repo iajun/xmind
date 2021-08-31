@@ -51,19 +51,21 @@ function getDefaultOptions(): IGraphOptions {
         const nodeConfig = config.global.registeredNodes[node.type];
         if (!nodeConfig) return 0;
         const { mapCfg, options } = nodeConfig;
-        return getSizeByConfig(
+        const size = getSizeByConfig(
           options,
           typeof mapCfg === "function" ? mapCfg(node) : node
-        )[0];
+        );
+        return size.width;
       },
       getHeight: (node) => {
         const nodeConfig = config.global.registeredNodes[node.type];
         if (!nodeConfig) return 0;
         const { mapCfg, options } = nodeConfig;
-        return getSizeByConfig(
+        const size = getSizeByConfig(
           options,
           typeof mapCfg === "function" ? mapCfg(node) : node
-        )[1];
+        );
+        return size.height;
       },
       getSide: () => {
         return "right";

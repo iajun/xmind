@@ -17,19 +17,19 @@ const global: Global = {
     fontFamily: "iconfont",
     gap: 6,
   },
-  registeredNodes: {}
+  registeredNodes: {},
 };
 
 export function setGlobal(options: Partial<Global>) {
-  _.merge(global, options)
+  _.merge(global, options);
 }
 
 export default {
   global,
   rootNode: {
+    padding: [10, 20],
     labelStyle: {
       fontSize: 16,
-      textAlign: "center",
       maxWidth: 300,
       minWidth: 40,
       lineHeight: 18,
@@ -42,10 +42,9 @@ export default {
     stateStyles: {
       [ItemState.Selected]: {
         lineWidth: 2,
-        stroke: '#888'
+        stroke: "#888",
       },
     },
-    padding: [10, 20],
   } as NodeConfig,
   xmindNode: {
     padding: [6, 10],
@@ -62,7 +61,6 @@ export default {
     },
     labelStyle: {
       fontSize: 14,
-      textAlign: "left",
       maxWidth: 500,
       minWidth: 40,
       lineHeight: 20,
@@ -82,4 +80,13 @@ export default {
     },
     padding: [10, 20],
   } as NodeConfig,
+  nodeDescription: {
+    padding: [6, 10],
+    labelStyle: {
+      fill: "#666",
+      fontSize: 12,
+      lineHeight: 16,
+    },
+    wrapperStyle: {},
+  },
 };

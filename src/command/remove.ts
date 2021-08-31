@@ -58,8 +58,8 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
     const { graph, params } = this;
     const { id, model } = params;
     graph.removeChild(id);
-    model.parentId &&
-      graph.setSelectedItems([model.parentId]);
+    const focusId = model.nextId || model.parentId;
+    focusId && graph.setSelectedItems([focusId]);
   }
 }
 
