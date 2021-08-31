@@ -1,14 +1,8 @@
 import { IGroup, Item, ModelConfig, ShapeOptions, Util } from "@antv/g6";
 import _ from "lodash";
 import config, { NodeConfig, setGlobal } from "../config";
-import { ItemState, NodeName } from "../constants";
+import { ItemState } from "../constants";
 import { TreeGraphData } from "../types";
-import {
-  fittingLabelHeight,
-  fittingLabelWidth,
-  fittingString,
-  getLabelByModel,
-} from "../utils";
 import {
   drawUnfoldButton,
   drawFoldButton,
@@ -97,7 +91,7 @@ const createLineNode = (
         zIndex: 2,
       });
 
-      const keyShape = drawNode(group, cfg, options, [width, height]);
+      const keyShape = drawNode(group, cfg, options);
       if (this.hasButton(cfg)) {
         this.drawButton(cfg, group);
       }

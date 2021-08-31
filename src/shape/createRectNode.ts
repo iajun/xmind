@@ -1,10 +1,4 @@
-import { IGroup, Item, ModelConfig, ShapeOptions, Util } from "@antv/g6";
-import {
-  fittingLabelHeight,
-  fittingLabelWidth,
-  fittingString,
-  getLabelByModel,
-} from "../utils";
+import { IGroup, Item, ModelConfig, ShapeOptions } from "@antv/g6";
 import { drawNode, getSizeByConfig } from "./util";
 import _ from "lodash";
 import { ItemState } from "../constants";
@@ -29,7 +23,7 @@ export const createRectNode = (
 
       console.log(this.getSize(cfg));
 
-      const keyshape = drawNode(group, cfg, options, this.getSize(cfg));
+      const keyshape = drawNode(group, cfg, options);
       console.log(group.getChildren());
       return keyshape;
     },

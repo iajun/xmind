@@ -129,7 +129,7 @@ export const drawNode = (
   options: NodeConfig
 ) => {
   const { labelStyle, wrapperStyle, padding } = options;
-  const { lineHeight, fontSize, maxWidth, minWidth } = labelStyle;
+  const { lineHeight, fontSize } = labelStyle;
   const formattedPadding = Util.formatPadding(padding);
   const {
     width,
@@ -137,7 +137,6 @@ export const drawNode = (
     textHeight,
     textWidth,
     leftIconWidth,
-    rightIconWidth,
     labelWidth,
     labelHeight,
     descHeight,
