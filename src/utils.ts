@@ -1,4 +1,5 @@
 import { v4 } from "uuid";
+import { decode } from "html-entities";
 import G6, {
   ComboConfig,
   EdgeConfig,
@@ -118,11 +119,12 @@ export const isFired = (shortcuts: string[] | string[][], e) => {
 };
 
 export const parseContentEditableStringToPlainText = (html: string) => {
-  return html
+  const str = html
     .replace(/<br>$/, "")
     .replace(/\n<br>$/, "")
     .replace(/\n\n$/, "\n")
     .replaceAll("<br>", "\n");
+  return decode(str);
 };
 
 export const cloneTree = <
@@ -165,3 +167,26 @@ export function setCaretToEnd(contentEditableElement: HTMLDivElement) {
   selection.removeAllRanges(); //remove any selections already made
   selection.addRange(range); //make the range you have just created the visible selection
 }
+
+export const Clipboard = {
+  key: "$_Case_Clipboard",
+  get() {
+    try {
+      const data = JSON.parse(localStorage.getItem(Clipboard.key));
+      if (!_.isEmpty(data) && data[Clipboard.key]) {
+        delete data[Clipboard.key];
+        return data;
+      }
+      return null;
+    } catch (error) {
+      return null;
+    }
+  },
+  set(data: any) {
+    if (_.isEmpty(data)) {
+      data = {};
+    }
+    data[Clipboard.key] = true;
+    return localStorage.setItem(Clipboard.key, JSON.stringify(data));
+  },
+};

@@ -20,11 +20,7 @@ export const createRectNode = (
       if (mapCfg) {
         cfg = mapCfg(cfg);
       }
-
-      console.log(this.getSize(cfg));
-
       const keyshape = drawNode(group, cfg, options);
-      console.log(group.getChildren());
       return keyshape;
     },
     setState(key?: string, value?: string | boolean, item?: Item) {

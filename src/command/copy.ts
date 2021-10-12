@@ -1,7 +1,7 @@
 import { ICommand, TreeGraphData } from "../types";
 import Graph from "../graph";
 import _ from "lodash";
-import { CTRL_KEY } from "../utils";
+import { Clipboard, CTRL_KEY } from "../utils";
 
 export interface CopyCommandParams {
   id: string;
@@ -17,9 +17,7 @@ class CopyCommand implements ICommand<CopyCommandParams> {
     model: {} as TreeGraphData,
   };
 
-  shortcuts = [
-    [CTRL_KEY, "c"],
-  ];
+  shortcuts = [[CTRL_KEY, "c"]];
 
   constructor(graph: Graph) {
     this.graph = graph;
@@ -50,8 +48,7 @@ class CopyCommand implements ICommand<CopyCommandParams> {
 
   execute() {
     const { id, model } = this.params;
-
-    this.graph.set("clipboard", { id, model });
+    Clipboard.set({ id, model });
   }
 }
 

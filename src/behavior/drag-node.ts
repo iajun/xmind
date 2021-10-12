@@ -305,7 +305,6 @@ const DragNodeBehavior: BehaviorOption = {
   },
 
   onDragEnd() {
-    this.executeDragCommand();
     const { el, graph } = this;
     el.removeEventListener("mousemove", this.onDragging);
     el.removeEventListener("mouseup", this.onDragEnd);
@@ -319,17 +318,18 @@ const DragNodeBehavior: BehaviorOption = {
       graph.removeChild(this.placeholderModel.id);
     }
 
+    this.executeDragCommand();
     this.nodePoints = [];
   },
 
   executeDragCommand() {
-    const {nextId, parentId} = this.computePlacePosition();
+    const { nextId, parentId } = this.computePlacePosition();
     const { model, graph } = this;
-    graph.get('command').execute('drag-node', {
+    graph.get("command").execute("drag-node", {
       model,
       nextId,
       parentId,
-    })
+    });
   },
 
   updateDelegate(x, y) {

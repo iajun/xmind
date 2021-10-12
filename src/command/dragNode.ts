@@ -43,6 +43,7 @@ class DragNodeCommand implements ICommand<DragNodeCommandParams> {
     if (graph.findById(model.id)) {
       graph.removeChild(model.id);
     }
+
     if (nextId) {
       graph.insertBefore(newModel, nextId);
     } else {

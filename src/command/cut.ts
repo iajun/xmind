@@ -1,6 +1,6 @@
 import { TreeGraphData, ICommand } from "../types";
 import Graph from "../graph";
-import { CTRL_KEY } from "../utils";
+import { Clipboard, CTRL_KEY } from "../utils";
 
 export interface CutCommandParams {
   id: string;
@@ -18,9 +18,7 @@ class CutCommand implements ICommand<CutCommandParams> {
     model: {},
   } as CutCommandParams;
 
-  shortcuts = [
-    [CTRL_KEY, "x"],
-  ];
+  shortcuts = [[CTRL_KEY, "x"]];
 
   constructor(graph: Graph) {
     this.graph = graph;
@@ -63,7 +61,7 @@ class CutCommand implements ICommand<CutCommandParams> {
   execute() {
     const { graph, params } = this;
     const { id, model } = params;
-    graph.set("clipboard", { id, model });
+    Clipboard.set({ id, model });
     graph.removeChild(id);
   }
 }

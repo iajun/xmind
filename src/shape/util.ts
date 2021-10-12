@@ -134,7 +134,6 @@ export const drawNode = (
   const {
     width,
     height,
-    textHeight,
     textWidth,
     leftIconWidth,
     labelWidth,
@@ -164,19 +163,6 @@ export const drawNode = (
 
   let baseLeft = formattedPadding[3];
 
-  // text wrapper;
-  group.addShape("rect", {
-    draggable: true,
-    attrs: {
-      width: labelWidth,
-      height: labelHeight,
-      x: baseLeft,
-      y: formattedPadding[0],
-      ...((cfg.itemStyle || {}) as object),
-    },
-    zIndex: 2,
-  });
-
   // left icons
   (leftIcons as any[]).forEach((iconConfig, i) => {
     group.addShape("text", {
@@ -194,11 +180,24 @@ export const drawNode = (
 
   baseLeft += leftIconWidth;
 
+  // text wrapper;
+  group.addShape("rect", {
+    draggable: true,
+    attrs: {
+      width: labelWidth,
+      height: labelHeight,
+      x: baseLeft,
+      y: formattedPadding[0],
+      ...((cfg.itemStyle || {}) as object),
+    },
+    zIndex: 2,
+  });
+
   // text && text style
   const isUnderLine = (cfg.itemStyle as any)?.textDecoration === "underline";
   const isDeleteLine = (cfg.itemStyle as any)?.textDecoration === "deleteLine";
   if (isUnderLine || isDeleteLine) {
-    _.range(0, textHeight / lineHeight).forEach((_a, i) => {
+    _.range(0, labelHeight / lineHeight).forEach((_a, i) => {
       group.addShape("path", {
         attrs: {
           path: [
@@ -224,7 +223,7 @@ export const drawNode = (
       width: labelWidth,
       height: labelHeight,
       x: baseLeft,
-      y: formattedPadding[0],
+      y: formattedPadding[0] + (lineHeight - fontSize) / 2,
       textBaseline: "top",
       textAlign: "left",
       fontSize,

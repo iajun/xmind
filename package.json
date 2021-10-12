@@ -14,6 +14,7 @@
   "dependencies": {
     "@antv/g6": "^4.3.4",
     "dom-align": "^1.12.2",
+    "html-entities": "^2.3.2",
     "lodash": "^4.17.21",
     "uuidv4": "^6.2.11"
   }
