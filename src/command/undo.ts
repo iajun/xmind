@@ -1,11 +1,9 @@
-import Graph from "../graph";
 import { ICommand } from "../types";
 import { CTRL_KEY } from "../utils";
 import CommandManager from "./manager";
 
 class undoCommand implements ICommand<{}> {
   private manager: CommandManager;
-  private graph: Graph;
 
   name = "undo";
 
@@ -13,9 +11,8 @@ class undoCommand implements ICommand<{}> {
 
   shortcuts = [[CTRL_KEY, "z"]];
 
-  constructor(graph: Graph, manager: CommandManager) {
+  constructor(manager: CommandManager) {
     this.manager = manager;
-    this.graph = graph;
   }
 
   init(): void {}

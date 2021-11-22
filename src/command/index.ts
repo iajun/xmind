@@ -10,11 +10,11 @@ import CutCommand from "./cut";
 import TopicCommand from "./topic";
 import SubTopicCommand from "./subTopic";
 import DeleteCommand from "./remove";
-import MoveUpCommand from './moveUp'
-import MoveDownCommand from './moveDown'
-import MoveLeftCommand from './moveLeft'
-import MoveRightCommand from './moveRight'
-import DragCommand from './dragNode'
+import MoveUpCommand from "./moveUp";
+import MoveDownCommand from "./moveDown";
+import MoveLeftCommand from "./moveLeft";
+import MoveRightCommand from "./moveRight";
+import DragCommand from "./dragNode";
 import Graph from "../graph";
 import { ICommand } from "../types";
 
@@ -45,7 +45,7 @@ function createCommandManager(graph: Graph, commandOptions?: CommandOption[]) {
     new FoldCommand(graph),
     new UnFoldCommand(graph),
     new UpdateCommand(graph),
-    new UndoCommand(graph, manager),
+    new UndoCommand(manager),
     new RedoCommand(graph, manager),
     new CopyCommand(graph),
     new PasteCommand(graph),
@@ -65,16 +65,18 @@ function createCommandManager(graph: Graph, commandOptions?: CommandOption[]) {
   if (!commandOptions) {
     resolvedCommands = commands;
   } else {
-    commands.forEach(command => {
-      const option = commandOptions.find(option => option.name === command.name);
+    commands.forEach((command) => {
+      const option = commandOptions.find(
+        (option) => option.name === command.name
+      );
       if (!option) {
-        resolvedCommands.push(command)
+        resolvedCommands.push(command);
       } else {
-        if (option.enabled ===  false) return;
+        if (option.enabled === false) return;
         (command as any).shouldExecute = option.shouldExecute.bind(command);
-        resolvedCommands.push(command)
+        resolvedCommands.push(command);
       }
-    })
+    });
   }
 
   resolvedCommands.forEach((command) => {

@@ -4,7 +4,6 @@ import G6, {
   ComboConfig,
   EdgeConfig,
   IGraph,
-  INode,
   Item,
   NodeConfig,
   TreeGraphData,
