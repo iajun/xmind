@@ -1,4 +1,4 @@
-import { TreeGraphData } from "./types";
+import { TreeGraphData } from "../types";
 
 const list: Omit<TreeGraphData, "children">[] = [
   {

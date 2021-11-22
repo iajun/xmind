@@ -1,4 +1,4 @@
-import { Node, TreeGraphData } from "./types";
+import { Node, TreeGraphData } from "../types";
 import _ from "lodash";
 
 const NO_ID = "__NO_ID__";
