@@ -12,7 +12,7 @@ class TopicCommand implements ICommand<TopicCommandParams> {
   name = "sub-topic";
 
   params = {
-    sourceId: '',
+    sourceId: "",
     newId: "",
   };
 
@@ -30,23 +30,20 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { graph, params } = this;
     const { newId, sourceId } = params;
     graph.removeChild(newId);
-    graph.setSelectedItems([sourceId])
+    graph.setSelectedItems([sourceId]);
   }
 
   canExecute(): boolean {
     const { graph } = this;
 
     const selectedNodes = graph.getSelectedNodes();
-    if (!selectedNodes.length) return false;
-    const selectedNode = selectedNodes[0];
-
-    return !graph.isRootNode(selectedNode.getID());
+    return selectedNodes.length === 1;
   }
 
   init() {
     const { graph } = this;
     const selectedNodes = graph.getSelectedNodes();
-    this.params.sourceId = selectedNodes[0].getID()
+    this.params.sourceId = selectedNodes[0].getID();
     const id = v4();
     this.params.newId = id;
   }
@@ -55,8 +52,11 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { graph, params } = this;
     const { sourceId, newId } = params;
     const item = graph.findById(sourceId)!;
-    graph.addChild({ id: newId, label: "subTopic", type: 'xmindNode', children: [] }, item)
-    graph.setSelectedItems([newId])
+    graph.addChild(
+      { id: newId, label: "subTopic", type: "xmindNode", children: [] },
+      item
+    );
+    graph.setSelectedItems([newId]);
   }
 }
 

@@ -80,11 +80,9 @@ it("cut & paste", () => {
   });
 });
 
-
 it("topic", () => {
   graph.setSelectedItems(["2"]);
   // manager.execute("topic");
-  console.log(getData())
 
   // expect(getData()).toMatchObject({
   //   id: "1",
@@ -107,7 +105,4 @@ it("topic", () => {
   //     },
   //   ],
   // });
-
 });
-
-

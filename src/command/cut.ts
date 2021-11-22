@@ -1,10 +1,11 @@
 import { TreeGraphData, ICommand } from "../types";
 import Graph from "../graph";
-import { Clipboard, CTRL_KEY } from "../utils";
+import { Clipboard, CTRL_KEY, getNextId, getParentId } from "../utils";
 
 export interface CutCommandParams {
   id: string;
   parentId: string;
+  nextId: string | null;
   model: TreeGraphData;
 }
 
@@ -14,7 +15,8 @@ class CutCommand implements ICommand<CutCommandParams> {
 
   params = {
     id: "",
-    parentId: "",
+    parentId: null,
+    nextId: null,
     model: {},
   } as CutCommandParams;
 
@@ -30,12 +32,8 @@ class CutCommand implements ICommand<CutCommandParams> {
 
   undo(): void {
     const { graph, params } = this;
-    const model = params.model!;
-    if (model.nextId) {
-      graph.insertBefore(model, model.nextId);
-    } else {
-      graph.addChild(model, model.parentId);
-    }
+    const { model, parentId, nextId } = params!;
+    graph.placeNode(model, { nextId, parentId });
   }
 
   canExecute(): boolean {
@@ -48,20 +46,20 @@ class CutCommand implements ICommand<CutCommandParams> {
 
   init() {
     const { graph } = this;
-    const selectedNodes = graph.getSelectedNodes();
-    if (!selectedNodes.length) return;
-    const id = selectedNodes[0].getID();
+    const selectedNode = graph.getSelectedNodes()[0];
+    const id = selectedNode.getID();
     this.params = {
       id,
-      parentId: selectedNodes[0].getModel().parentId as string,
+      nextId: getNextId(selectedNode),
+      parentId: getParentId(selectedNode),
       model: graph.findDataById(id) as TreeGraphData,
     };
   }
 
   execute() {
     const { graph, params } = this;
-    const { id, model } = params;
-    Clipboard.set({ id, model });
+    const { id } = params;
+    Clipboard.set(params);
     graph.removeChild(id);
   }
 }

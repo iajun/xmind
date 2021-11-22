@@ -1,9 +1,10 @@
 import { ICommand } from "../types";
 import Graph from "../graph";
+import { getParentId } from "../utils";
 
 export interface MoveLeftCommandParams {
-    id: string,
-    targetId: string 
+  id: string;
+  targetId: string;
 }
 
 class MoveLeftCommand implements ICommand<MoveLeftCommandParams> {
@@ -13,12 +14,10 @@ class MoveLeftCommand implements ICommand<MoveLeftCommandParams> {
 
   params = {
     id: "",
-    targetId: ''
+    targetId: "",
   };
 
-  shortcuts = [
-    ["ArrowLeft"],
-  ];
+  shortcuts = [["ArrowLeft"]];
 
   constructor(graph: Graph) {
     this.graph = graph;
@@ -28,15 +27,13 @@ class MoveLeftCommand implements ICommand<MoveLeftCommandParams> {
     return false;
   }
 
-  undo(): void {
-  }
+  undo(): void {}
 
   canExecute(): boolean {
     const selectedNodes = this.graph.getSelectedNodes();
 
     if (selectedNodes.length !== 1) return false;
-    if (!selectedNodes[0].getModel().parentId) return false;
-
+    if (!getParentId(selectedNodes[0])) return false;
     return true;
   }
 
@@ -47,13 +44,13 @@ class MoveLeftCommand implements ICommand<MoveLeftCommandParams> {
     const id = selectedNodes[0].getID();
     this.params = {
       id,
-      targetId: selectedNodes[0].getModel().parentId as string
+      targetId: getParentId(selectedNodes[0]),
     };
   }
 
   execute() {
     const { targetId } = this.params;
-    this.graph.setSelectedItems([targetId])
+    this.graph.setSelectedItems([targetId]);
   }
 }
 

@@ -1,9 +1,10 @@
 import { ICommand } from "../types";
 import Graph from "../graph";
+import { getPrevId } from "../utils";
 
 export interface MoveUpCommandParams {
-    id: string,
-    targetId: string 
+  id: string;
+  targetId: string;
 }
 
 class MoveUpCommand implements ICommand<MoveUpCommandParams> {
@@ -13,12 +14,10 @@ class MoveUpCommand implements ICommand<MoveUpCommandParams> {
 
   params = {
     id: "",
-    targetId: ''
+    targetId: "",
   };
 
-  shortcuts = [
-    ["ArrowUp"],
-  ];
+  shortcuts = [["ArrowUp"]];
 
   constructor(graph: Graph) {
     this.graph = graph;
@@ -28,14 +27,13 @@ class MoveUpCommand implements ICommand<MoveUpCommandParams> {
     return false;
   }
 
-  undo(): void {
-  }
+  undo(): void {}
 
   canExecute(): boolean {
     const selectedNodes = this.graph.getSelectedNodes();
 
     if (selectedNodes.length !== 1) return false;
-    if (!this.graph.getLastSibling(selectedNodes[0].getID())) return false;
+    if (!getPrevId(selectedNodes[0])) return false;
 
     return true;
   }
@@ -48,13 +46,13 @@ class MoveUpCommand implements ICommand<MoveUpCommandParams> {
     const id = selectedNodes[0].getID();
     this.params = {
       id,
-      targetId: graph.getLastSibling(id).getID()
+      targetId: getPrevId(selectedNodes[0]),
     };
   }
 
   execute() {
     const { targetId } = this.params;
-    this.graph.setSelectedItems([targetId])
+    this.graph.setSelectedItems([targetId]);
   }
 }
 

@@ -4,6 +4,7 @@ import { BBox } from "@antv/g-base";
 import Graph from "../graph";
 import _ from "lodash";
 import { deepMix } from "@antv/util";
+import { getNextId, getParentId } from "../utils";
 
 type NodePosition = {
   width: number;
@@ -16,12 +17,10 @@ type NodePosition = {
   depth: number;
 };
 
-const getPlaceholderModel = (itemModel) => ({
+const getPlaceholderModel = () => ({
   id: "dragPlaceholderNode",
   type: "dragPlaceholderNode",
   label: "",
-  parentId: itemModel.parentId,
-  nextId: itemModel.nextId,
 });
 
 const compute = {
@@ -155,6 +154,7 @@ const DragNodeBehavior: BehaviorOption = {
 
     const graph = this.get("graph") as Graph,
       el = graph.get("container");
+    if (graph.isRootNode(e.item.getID())) return;
 
     Object.assign(this, { graph, el });
     this.onDragging = this.onDragging.bind(this);
@@ -170,6 +170,10 @@ const DragNodeBehavior: BehaviorOption = {
     const itemBBox = e.item.getBBox();
     const model = e.item.getModel();
     this.model = model;
+    this.originalPosition = {
+      parentId: getParentId(e.item),
+      nextId: getNextId(e.item),
+    };
 
     this.itemPosition = {
       offsetX: e.x - itemBBox.x,
@@ -177,7 +181,7 @@ const DragNodeBehavior: BehaviorOption = {
       ..._.pick(itemBBox, ["width", "height"]),
     };
 
-    this.placeholderModel = getPlaceholderModel(model);
+    this.placeholderModel = getPlaceholderModel();
     graph.removeChild(this.model.id);
   },
 
@@ -203,7 +207,8 @@ const DragNodeBehavior: BehaviorOption = {
         // node id
         id: model.id,
         // node parent id
-        parentId: model.parentId,
+        parentId: getParentId(node),
+        nextId: getNextId(node),
         // node label
         label: model.label,
         depth: model.depth,
@@ -298,10 +303,7 @@ const DragNodeBehavior: BehaviorOption = {
       graph.removeChild(model.id);
     }
 
-    graph.placeNode({
-      ...model,
-      ...this.computePlacePosition(),
-    });
+    graph.placeNode(model, this.computePlacePosition());
   },
 
   onDragEnd() {
@@ -329,6 +331,8 @@ const DragNodeBehavior: BehaviorOption = {
       model,
       nextId,
       parentId,
+      oldNextId: this.originalPosition.nextId,
+      oldParentId: this.originalPosition.parentId,
     });
   },
 

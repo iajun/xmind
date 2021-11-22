@@ -11,9 +11,7 @@ class undoCommand implements ICommand<{}> {
 
   params = {};
 
-  shortcuts = [
-    [CTRL_KEY, "z"],
-  ];
+  shortcuts = [[CTRL_KEY, "z"]];
 
   constructor(graph: Graph, manager: CommandManager) {
     this.manager = manager;
@@ -41,11 +39,6 @@ class undoCommand implements ICommand<{}> {
     const { commandQueue, commandIndex } = commandManager;
     const lastCommand = commandQueue[commandIndex - 1];
     lastCommand.undo();
-
-    if (lastCommand && (lastCommand.params as any).id) {
-      const id = (lastCommand.params as any).id;
-      this.graph.setSelectedItems([id]);
-    }
 
     commandManager.commandIndex -= 1;
   }

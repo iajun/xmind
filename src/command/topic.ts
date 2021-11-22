@@ -1,10 +1,13 @@
 import { v4 } from "uuid";
-import { ICommand, TreeGraphData } from "./../types";
+import { ICommand, NodeType } from "./../types";
 import Graph from "../graph";
+import { getNextId, getParentId } from "../utils";
 
 export interface TopicCommandParams {
-  originalModel: TreeGraphData,
-  newId: string;
+  parentId: string | null;
+  id: string | null;
+  selectedId: string | null;
+  nextId: string | null;
 }
 
 class TopicCommand implements ICommand<TopicCommandParams> {
@@ -12,8 +15,10 @@ class TopicCommand implements ICommand<TopicCommandParams> {
   name = "topic";
 
   params = {
-    originalModel: {} as TreeGraphData,
-    newId: "",
+    parentId: null,
+    id: null,
+    selectedId: null,
+    nextId: null,
   };
 
   shortcuts = ["Enter"];
@@ -28,9 +33,9 @@ class TopicCommand implements ICommand<TopicCommandParams> {
 
   undo(): void {
     const { graph, params } = this;
-    const { newId, originalModel } = params;
-    graph.removeChild(newId);
-    graph.setSelectedItems([originalModel.id])
+    const { id, selectedId } = params;
+    graph.removeChild(id);
+    graph.setSelectedItems([selectedId]);
   }
 
   canExecute(): boolean {
@@ -45,22 +50,26 @@ class TopicCommand implements ICommand<TopicCommandParams> {
 
   init() {
     const { graph } = this;
-    const selectedNodes = graph.getSelectedNodes();
-    this.params.originalModel = selectedNodes[0].getModel() as TreeGraphData;
-    const id = v4();
-    this.params.newId = id;
+    const selectedNode = graph.getSelectedNodes()[0];
+    this.params = {
+      parentId: getParentId(selectedNode),
+      nextId: getNextId(selectedNode),
+      selectedId: selectedNode.getID(),
+      id: v4(),
+    };
   }
 
   execute() {
     const { graph, params } = this;
-    const { originalModel, newId } = params;
-    const newModel = { id: newId, label: "topic", type: 'xmindNode', children: [] };
-    if (originalModel.nextId) {
-      graph.insertBefore(newModel, originalModel.nextId)
-    } else {
-      graph.addChild(newModel, graph.findById(originalModel.parentId));
-    }
-    graph.setSelectedItems([newId])
+    const { id, nextId, parentId } = params;
+    const newModel = {
+      id,
+      label: "topic",
+      type: "xmindNode" as NodeType,
+      children: [],
+    };
+    graph.placeNode(newModel, { nextId, parentId });
+    graph.setSelectedItems([id]);
     this.graph.layout(false);
   }
 }

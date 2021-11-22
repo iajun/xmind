@@ -4,6 +4,8 @@ import G6, {
   ComboConfig,
   EdgeConfig,
   IGraph,
+  INode,
+  Item,
   NodeConfig,
   TreeGraphData,
 } from "@antv/g6";
@@ -130,8 +132,6 @@ export const parseContentEditableStringToPlainText = (html: string) => {
 export const cloneTree = <
   T extends {
     children?: T[];
-    nextId: string | null;
-    parentId: string | null;
     id: string;
   }
 >(
@@ -143,15 +143,6 @@ export const cloneTree = <
     const id = v4();
     forEachItem && forEachItem(item);
     item.id = id;
-  });
-
-  Util.traverseTree(newTree, (item: T) => {
-    if (item.children && item.children.length) {
-      item.children.forEach((child, i) => {
-        child.nextId = item.children[i + 1] ? item.children[i + 1].id : null;
-        child.parentId = item.id;
-      });
-    }
   });
   return newTree;
 };
@@ -190,3 +181,31 @@ export const Clipboard = {
     return localStorage.setItem(Clipboard.key, JSON.stringify(data));
   },
 };
+
+export function getParentId(node: Item): string | null {
+  const parent = node.get("parent");
+  if (!parent) return null;
+  return parent.get("id") || null;
+}
+
+export function getNextId(node: Item): string | null {
+  const parent = node.get("parent");
+  if (!parent) return null;
+  const children = parent.getModel().children || [];
+  const idx = children.findIndex((item) => item.id === node.getID());
+  if (~idx) {
+    return children[idx + 1]?.id || null;
+  }
+  return null;
+}
+
+export function getPrevId(node: Item): string | null {
+  const parent = node.get("parent");
+  if (!parent) return null;
+  const children = parent.getModel().children || [];
+  const idx = children.findIndex((item) => item.id === node.getID());
+  if (~idx) {
+    return children[idx - 1]?.id || null;
+  }
+  return null;
+}

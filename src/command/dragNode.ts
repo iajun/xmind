@@ -8,6 +8,8 @@ export interface DragNodeCommandParams {
   newModel: TreeGraphData;
   parentId: string;
   nextId: string | null;
+  oldParentId: string;
+  oldNextId: string | null;
   mapItem?: (item: TreeGraphData) => TreeGraphData;
 }
 
@@ -23,6 +25,8 @@ class DragNodeCommand implements ICommand<DragNodeCommandParams> {
     newModel: {},
     parentId: "",
     nextId: null,
+    oldParentId: "",
+    oldNextId: null,
   } as DragNodeCommandParams;
 
   constructor(graph: Graph) {
@@ -40,23 +44,16 @@ class DragNodeCommand implements ICommand<DragNodeCommandParams> {
   execute(): void {
     const { graph, params } = this;
     const { parentId, nextId, model, newModel } = params;
-    if (graph.findById(model.id)) {
-      graph.removeChild(model.id);
-    }
-
-    if (nextId) {
-      graph.insertBefore(newModel, nextId);
-    } else {
-      graph.addChild(newModel, parentId);
-    }
+    graph.removeChild(model.id);
+    graph.placeNode(newModel, { nextId, parentId });
   }
 
   undo(): void {
     const { graph, params } = this;
-    const { model, newModel } = params;
+    const { model, newModel, oldParentId, oldNextId } = params;
     graph.executeBatch(() => {
       graph.removeChild(newModel.id);
-      graph.placeNode(model);
+      graph.placeNode(model, { parentId: oldParentId, nextId: oldNextId });
     });
   }
 

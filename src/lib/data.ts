@@ -4,7 +4,6 @@ const list: Omit<TreeGraphData, "children">[] = [
   {
     id: "__1__",
     parentId: null,
-    nextId: null,
     label: "root node",
     leftIcons: [
       {

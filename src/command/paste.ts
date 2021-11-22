@@ -56,7 +56,6 @@ class PasteCommand implements ICommand<PasteCommandParams> {
     const { newModel } = params;
     const selectedNode = graph.getSelectedNodes()[0];
     const parentId = (this.params.parentId = selectedNode.getID());
-    newModel.parentId = parentId;
     graph.addChild(newModel, parentId);
     graph.setSelectedItems([newModel.id]);
   }

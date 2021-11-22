@@ -1,9 +1,10 @@
 import { ICommand } from "../types";
 import Graph from "../graph";
+import { getNextId } from "../utils";
 
 export interface MoveDownCommandParams {
-    id: string,
-    targetId: string 
+  id: string;
+  targetId: string;
 }
 
 class MoveDownCommand implements ICommand<MoveDownCommandParams> {
@@ -13,12 +14,10 @@ class MoveDownCommand implements ICommand<MoveDownCommandParams> {
 
   params = {
     id: "",
-    targetId: ''
+    targetId: "",
   };
 
-  shortcuts = [
-    ["ArrowDown"],
-  ];
+  shortcuts = [["ArrowDown"]];
 
   constructor(graph: Graph) {
     this.graph = graph;
@@ -28,14 +27,13 @@ class MoveDownCommand implements ICommand<MoveDownCommandParams> {
     return false;
   }
 
-  undo(): void {
-  }
+  undo(): void {}
 
   canExecute(): boolean {
     const selectedNodes = this.graph.getSelectedNodes();
 
     if (selectedNodes.length !== 1) return false;
-    if (!selectedNodes[0].getModel().nextId) return false;
+    if (!getNextId(selectedNodes[0])) return false;
 
     return true;
   }
@@ -47,13 +45,13 @@ class MoveDownCommand implements ICommand<MoveDownCommandParams> {
     const id = selectedNodes[0].getID();
     this.params = {
       id,
-      targetId: selectedNodes[0].getModel().nextId as string
+      targetId: getNextId(selectedNodes[0]),
     };
   }
 
   execute() {
     const { targetId } = this.params;
-    this.graph.setSelectedItems([targetId])
+    this.graph.setSelectedItems([targetId]);
   }
 }
 

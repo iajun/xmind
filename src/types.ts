@@ -12,8 +12,6 @@ export type Node = {
 export type TreeGraphData = ITreeGraphData & {
   type: NodeType;
   children?: TreeGraphData[];
-  nextId: string | null;
-  parentId: string | null
 };
 
 export type NodeType = "rootNode" | "xmindNode";
@@ -34,7 +32,7 @@ export interface ICommand<P = object> {
   /** 撤销命令 */
   undo(): void;
   /** 初始化参数 */
-  init(): void
+  init(): void;
   /** 命令快捷键 */
   shortcuts: string[] | string[][];
 }
@@ -44,12 +42,12 @@ export type ItemType = "node" | "edge";
 export type Item = INode | IEdge;
 
 export type Global = {
-  stroke: string,
-  lineWidth: number
+  stroke: string;
+  lineWidth: number;
   icon: {
-    fontSize: number,
-    fontFamily: string,
-    gap: number,
-  },
-  registeredNodes: Record<string, NodeConfig>
-}
+    fontSize: number;
+    fontFamily: string;
+    gap: number;
+  };
+  registeredNodes: Record<string, NodeConfig>;
+};

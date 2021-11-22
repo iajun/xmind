@@ -1,8 +1,11 @@
 import { ICommand, TreeGraphData } from "../types";
 import Graph from "../graph";
+import { getNextId, getParentId } from "../utils";
 
 export interface RemoveCommandParams {
   id: string;
+  parentId: string;
+  nextId: string;
   model: TreeGraphData;
 }
 
@@ -12,6 +15,8 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
 
   params = {
     id: "",
+    parentId: "",
+    nextId: "",
     model: {} as TreeGraphData,
   };
 
@@ -27,13 +32,9 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
 
   undo(): void {
     const { graph, params } = this;
-    const { model } = params;
-    if (model.nextId) {
-      graph.insertBefore(model, model.nextId);
-    } else if (model.parentId) {
-      graph.addChild(model, model.parentId);
-    }
-    graph.setSelectedItems([model.id]);
+    const { model, nextId, parentId, id } = params;
+    graph.placeNode(model, { nextId, parentId });
+    graph.setSelectedItems([id]);
   }
 
   canExecute(): boolean {
@@ -49,16 +50,19 @@ class RemoveCommand implements ICommand<RemoveCommandParams> {
   init() {
     const { graph } = this;
     const selectedNodes = graph.getSelectedNodes();
-    const model = (this.params.model =
-      selectedNodes[0].getModel() as TreeGraphData);
-    this.params.id = model.id;
+    this.params = {
+      model: selectedNodes[0].getModel() as TreeGraphData,
+      id: selectedNodes[0].getID(),
+      nextId: getNextId(selectedNodes[0]),
+      parentId: getParentId(selectedNodes[0]),
+    };
   }
 
   execute() {
     const { graph, params } = this;
-    const { id, model } = params;
+    const { id, nextId } = params;
     graph.removeChild(id);
-    const focusId = model.nextId || model.parentId;
+    const focusId = nextId;
     focusId && graph.setSelectedItems([focusId]);
   }
 }

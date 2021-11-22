@@ -2,6 +2,7 @@ import { EditorEvent, ItemState } from "./constants";
 import { GraphData, IEdge, INode, TreeGraph, TreeGraphData } from "@antv/g6";
 import { Item, TreeGraphData as ITreeGraphData } from "./types";
 import _ from "lodash";
+import { getParentId } from "./utils";
 
 class Graph extends TreeGraph {
   isRootNode(item: string) {
@@ -41,17 +42,21 @@ class Graph extends TreeGraph {
     }
   }
 
-  placeNode(model: ITreeGraphData) {
-    if (model.nextId) {
-      this.insertBefore(model, model.nextId);
-    } else if (model.parentId) {
-      this.addChild(model, model.parentId);
+  placeNode(
+    model: ITreeGraphData,
+    { nextId, parentId }: { nextId?: string | null; parentId?: string | null }
+  ) {
+    if (nextId) {
+      this.insertBefore(model, nextId);
+    } else if (parentId) {
+      this.addChild(model, parentId);
     }
   }
 
-  insertBefore(model: TreeGraphData, id: string | Item) {
-    const item: Item = typeof id === "string" ? this.findById(id) : id;
-    const parentId = item.getModel().parentId as string | null;
+  insertBefore(model: TreeGraphData, nextId: string | Item) {
+    const nextItem: Item =
+      typeof nextId === "string" ? this.findById(nextId) : nextId;
+    const parentId = getParentId(nextItem);
     if (!parentId) return;
 
     this.ensureNodeExpanded(parentId);
@@ -59,22 +64,13 @@ class Graph extends TreeGraph {
     const parentItem = this.findById(parentId);
     const children = _.cloneDeep(parentItem.getModel().children) as
       | TreeGraphData[]
-      | null;
+      | undefined;
     if (!children) return;
 
-    const nextSiblingModel = item.getModel();
+    const idx = children.findIndex((item) => item.id === nextItem.getID());
 
-    const idx = children.findIndex((item) => item.id === nextSiblingModel.id);
-
-    model.nextId = nextSiblingModel.id;
-    model.parentId = nextSiblingModel.parentId;
-
-    children[idx - 1] && (children[idx - 1].nextId = model.id);
     children.splice(idx, 0, model);
-
-    if (children) {
-      this.updateChildren(children, model.parentId as string);
-    }
+    this.updateChildren([...children], parentId);
   }
 
   changeData(data: GraphData | TreeGraphData) {
@@ -86,33 +82,10 @@ class Graph extends TreeGraph {
 
     if (!parentId) return;
     this.ensureNodeExpanded(parentId);
-
-    const lastChild = this.findAll("node", (item) => {
-      const model = item.getModel();
-      return model.parentId === parentId && model.nextId === null;
-    })[0];
-    if (lastChild) {
-      lastChild.update({
-        nextId: data.id,
-      });
-    }
-
-    data.parentId = parentId;
-    data.nextId = null;
     this.keepMatrix(super.addChild)(data, parent);
   }
 
   removeChild(id: string): void {
-    const model = this.findById(id).getModel();
-    const lastSibling = this.findAll(
-      "node",
-      (item) => item.getModel().nextId === id
-    )[0];
-    if (lastSibling) {
-      lastSibling.update({
-        nextId: model.nextId,
-      });
-    }
     this.keepMatrix(super.removeChild)(id);
   }
 

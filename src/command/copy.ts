@@ -31,15 +31,17 @@ class CopyCommand implements ICommand<CopyCommandParams> {
 
   canExecute(): boolean {
     const selectedNodes = this.graph.getSelectedNodes();
-    return selectedNodes.length === 1;
+    return (
+      selectedNodes.length === 1 &&
+      !this.graph.isRootNode(selectedNodes[0].getID())
+    );
   }
 
   init() {
     const { graph } = this;
     const selectedNodes = graph.getSelectedNodes();
-    if (!selectedNodes.length) return;
     const id = selectedNodes[0].getID();
-    const model = _.cloneDeep(graph.findDataById(id)) as TreeGraphData;
+    const model = graph.findDataById(id) as TreeGraphData;
     this.params = {
       id,
       model,
