@@ -96,7 +96,7 @@ class CommandManager {
   }
 
   private shouldTriggerShortcut(): Boolean {
-    return this.editorFocused;
+    return this.editorFocused || !this.graph.isEditing
   }
 
   get container() {

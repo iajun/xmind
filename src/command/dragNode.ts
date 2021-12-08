@@ -42,10 +42,15 @@ class DragNodeCommand implements ICommand<DragNodeCommandParams> {
   }
 
   execute(): void {
-    const { graph, params } = this;
-    const { parentId, nextId, model, newModel } = params;
-    graph.removeChild(model.id);
+    const {graph, params} = this;
+    const {parentId, nextId, model, newModel} = params;
+    if (graph.findById(model.id)) {
+      graph.removeChild(model.id);
+    }
     graph.placeNode(newModel, { nextId, parentId });
+    setTimeout(() => {
+      graph.setSelectedItems([newModel.id]);
+    });
   }
 
   undo(): void {
@@ -53,7 +58,10 @@ class DragNodeCommand implements ICommand<DragNodeCommandParams> {
     const { model, newModel, oldParentId, oldNextId } = params;
     graph.executeBatch(() => {
       graph.removeChild(newModel.id);
-      graph.placeNode(model, { parentId: oldParentId, nextId: oldNextId });
+      graph.placeNode(model, {parentId: oldParentId, nextId: oldNextId});
+      setTimeout(() => {
+        graph.setSelectedItems([model.id]);
+      });
     });
   }
 

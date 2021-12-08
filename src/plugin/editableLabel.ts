@@ -176,8 +176,8 @@ export default class EditableLabel extends Base {
       matrix[1],
       matrix[3],
       matrix[4],
-      containerPoint.x + labelBBox.x,
-      containerPoint.y,
+      containerPoint.x + labelBBox.x * matrix[0],
+      containerPoint.y + labelBBox.y * matrix[3],
     ].join();
 
     modifyCSS(this.wrapperEl, {

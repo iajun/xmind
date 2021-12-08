@@ -5,6 +5,8 @@ import _ from "lodash";
 import { getParentId } from "./utils";
 
 class Graph extends TreeGraph {
+  $isEditing = false
+
   isRootNode(item: string) {
     const rootNode = this.get("data");
     if (!rootNode) return false;
@@ -154,6 +156,14 @@ class Graph extends TreeGraph {
       point.x < 0 ||
       point.y < 0
     );
+  }
+
+  get isEditing() {
+    return this.$isEditing || !!this.findAllByState('node', ItemState.Editing).length;
+  }
+
+  setEditState(state: boolean) {
+    this.$isEditing = state;
   }
 }
 

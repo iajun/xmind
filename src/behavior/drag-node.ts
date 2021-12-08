@@ -14,7 +14,6 @@ type NodePosition = {
   id: string;
   parentId: number;
   label: string;
-  depth: number;
 };
 
 const getPlaceholderModel = () => ({
@@ -59,9 +58,6 @@ const compute = {
       if (x <= item.x + item.width) {
         return;
       }
-      if (closestParent && closestParent.depth > item.depth) {
-        return;
-      }
       const dis = compute.distance(
         [x, y],
         [item.x + item.width, item.y + item.height / 2]
@@ -75,7 +71,7 @@ const compute = {
     if (!closestParent) return { parent: null, sibling: null };
 
     const siblingList = list.filter(
-      (item) => item.depth === closestParent.depth + 1 && item.x < x
+      (item) => item.x < x && item.x + item.width > x
     );
 
     let closestNext = null,
@@ -98,19 +94,12 @@ const compute = {
       }
     });
 
-    if (closestPrev && closestNext) {
-      if (lastNextMin > lastPrevMin) {
-        if (closestPrev.parentId !== closestParent.id) {
-          closestParent = map[closestPrev.parentId];
-          closestNext = null;
-        } else if (closestNext.parentId !== closestParent.id) {
-          closestNext = null;
-        }
-      } else {
-        if (closestNext.parentId !== closestParent.id) {
-          closestParent = map[closestNext.parentId];
-        }
-      }
+    if (lastPrevMin < lastNextMin && closestPrev && closestPrev.parentId !== closestParent.id) {
+      closestParent = map[closestPrev.parentId];
+      closestNext = null;
+    }
+    if (closestNext && closestNext.parentId !== closestParent.id) {
+      closestNext = null
     }
 
     if (maxThreshold) {
@@ -155,6 +144,8 @@ const DragNodeBehavior: BehaviorOption = {
     const graph = this.get("graph") as Graph,
       el = graph.get("container");
     if (graph.isRootNode(e.item.getID())) return;
+
+    graph.setEditState(true);
 
     Object.assign(this, { graph, el });
     this.onDragging = this.onDragging.bind(this);
@@ -211,7 +202,6 @@ const DragNodeBehavior: BehaviorOption = {
         nextId: getNextId(node),
         // node label
         label: model.label,
-        depth: model.depth,
       });
       return false;
     });
@@ -279,14 +269,13 @@ const DragNodeBehavior: BehaviorOption = {
 
   computePlacePosition() {
     const shouldDragTo = this.get("shouldDragTo");
-    const { graph, closestItem } = this;
-    const originalModel = this.model;
+    const { graph, closestItem, originalPosition  } = this;
     const { parent, sibling } = closestItem;
 
     if (!parent || (parent && !shouldDragTo(graph.findById(parent.id)))) {
       return {
-        nextId: originalModel.nextId,
-        parentId: originalModel.parentId,
+        nextId: originalPosition.nextId,
+        parentId: originalPosition.parentId,
       };
     } else {
       return {
@@ -322,6 +311,10 @@ const DragNodeBehavior: BehaviorOption = {
 
     this.executeDragCommand();
     this.nodePoints = [];
+
+    setTimeout(() => {
+      graph.setEditState(false)
+    })
   },
 
   executeDragCommand() {

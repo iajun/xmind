@@ -1,6 +1,5 @@
 import { modifyCSS, createDom } from "@antv/dom-util";
 import Base from "@antv/g6-plugin/lib/base";
-import domAlign from 'dom-align';
 import { IG6GraphEvent, INode } from "@antv/g6";
 import Graph from "../graph";
 import { GraphNodeEvent } from "../constants";
@@ -20,7 +19,6 @@ export default class DomAlign extends Base {
   protected el!: HTMLDivElement;
   protected wrapperEl!: HTMLDivElement;
   protected container!: HTMLDivElement;
-  protected shadowEl!: HTMLDivElement;
   protected graph!: Graph;
   protected item?: INode | null;
   protected currentEvent!: IG6GraphEvent
@@ -57,18 +55,12 @@ export default class DomAlign extends Base {
     const cls = this.get("className");
 
     this.wrapperEl = createDom(`<div class=${cls || "g6-dom-align"} />`);
-    this.shadowEl = createDom('<div style="visibility: hidden" />')
-    this.container.append(this.shadowEl)
+    this.el = createDom('<div />')
+    this.wrapperEl.appendChild(this.el)
 
     modifyCSS(this.wrapperEl, {
       visibility: "hidden",
     });
-
-    modifyCSS(this.shadowEl, {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-    })
 
     this.container.appendChild(this.wrapperEl);
     
@@ -79,7 +71,7 @@ export default class DomAlign extends Base {
   }
 
   private adjustPosition() {
-    const { item, currentEvent } = this;
+    const { item } = this;
     if (!item) { return; }
     const { graph } = this;
     const bBox = item.getBBox();
@@ -100,12 +92,6 @@ export default class DomAlign extends Base {
       width: `${bBox.width}px`,
       height: `${bBox.height}px`
     });
-
-    const alignConfig = this.get('alignConfig');
-
-    const align = alignConfig ? alignConfig(currentEvent, this) : BuiltInPlacements[this.get('placement')];
-
-    domAlign(this.el, this.wrapperEl, align);
   }
 
   stopClickPropagation() {
@@ -134,12 +120,7 @@ export default class DomAlign extends Base {
 
     e.stopPropagation()
 
-    if (this.el) {
-      this.wrapperEl.removeChild(this.el)
-    }
-    this.el = this.get("getContent")(e, this);
-    this.wrapperEl.appendChild(this.el);
-
+    this.get('getContent')(this.el, this.graph.getGroup().getMatrix()[0], item);
     this.item = item as INode;
 
     modifyCSS(this.wrapperEl, {
@@ -177,7 +158,6 @@ export default class DomAlign extends Base {
 
   public destroy() {
     this.container.removeChild(this.wrapperEl);
-    this.container.removeChild(this.shadowEl);
     window.removeEventListener('click', this.outerClick)
   }
 }
