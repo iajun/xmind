@@ -94,12 +94,16 @@ const compute = {
       }
     });
 
-    if (lastPrevMin < lastNextMin && closestPrev && closestPrev.parentId !== closestParent.id) {
+    if (
+      lastPrevMin < lastNextMin &&
+      closestPrev &&
+      closestPrev.parentId !== closestParent.id
+    ) {
       closestParent = map[closestPrev.parentId];
       closestNext = null;
     }
     if (closestNext && closestNext.parentId !== closestParent.id) {
-      closestNext = null
+      closestNext = null;
     }
 
     if (maxThreshold) {
@@ -264,12 +268,13 @@ const DragNodeBehavior: BehaviorOption = {
     30,
     {
       leading: true,
+      trailing: false,
     }
   ),
 
   computePlacePosition() {
     const shouldDragTo = this.get("shouldDragTo");
-    const { graph, closestItem, originalPosition  } = this;
+    const { graph, closestItem, originalPosition } = this;
     const { parent, sibling } = closestItem;
 
     if (!parent || (parent && !shouldDragTo(graph.findById(parent.id)))) {
@@ -312,9 +317,7 @@ const DragNodeBehavior: BehaviorOption = {
     this.executeDragCommand();
     this.nodePoints = [];
 
-    setTimeout(() => {
-      graph.setEditState(false)
-    })
+    graph.setEditState(false);
   },
 
   executeDragCommand() {
