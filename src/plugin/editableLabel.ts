@@ -3,32 +3,36 @@ import {
   GraphCommonEvent,
   GraphNodeEvent,
   ItemState,
-  NodeName,
+  NodeName
 } from "./../constants";
 import { modifyCSS, createDom } from "@antv/dom-util";
 import { Item } from "@antv/g6-core";
 import Base from "@antv/g6-plugin/lib/base";
 import {
+  fittingLabelWidth,
   getLabelByModel,
   isFired,
   isLabelEqual,
-  parseContentEditableStringToPlainText,
-  setCaretToEnd,
+  setBounds
 } from "../utils";
-import config from "../config";
+import config, { PLACE_HOLDER } from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
+import Quill from "./quill";
 
 export type EditableLabelConfig = {
   shortcuts?: string[] | string[][];
   shouldBegin?: (item: INode) => boolean;
 };
 
+const formatEditorText = (text: string) => (text || "").replace(/\n$/, "");
+
 export default class EditableLabel extends Base {
   private editorEl!: HTMLDivElement;
   private wrapperEl!: HTMLDivElement;
   private container!: HTMLDivElement;
-  private originalTextRect: any;
+  private event!: IG6GraphEvent;
+  private editor!: Quill;
   private graph!: Graph;
   private item?: INode | null;
   private originalLabel: string = "";
@@ -38,18 +42,19 @@ export default class EditableLabel extends Base {
       shortcuts: [["metaKey", "Enter"]],
       shouldBegin() {
         return true;
-      },
+      }
     } as EditableLabelConfig;
   }
 
   public getEvents() {
     return {
       [GraphNodeEvent.onNodeDoubleClick]: "onNodeDoubleClick",
-      [GraphCommonEvent.onKeyUp]: "onKeyUp",
+      [GraphCommonEvent.onKeyUp]: "onKeyUp"
     };
   }
 
   onNodeDoubleClick(e: IG6GraphEvent) {
+    this.event = e;
     if (!e.item) return;
     this.onShow(e.item as INode);
   }
@@ -74,30 +79,39 @@ export default class EditableLabel extends Base {
   init() {
     const graph = (this.graph = this.get("graph"));
     this.container = graph.get("container");
-    const className = this.get("className");
-    this.editorEl = createDom(
-      `<div class=${
-        className || "g6-editable-label"
-      } contenteditable='plaintext-only'></div>`
-    );
     this.wrapperEl = createDom(`<div class='g6-editable' />`);
-    this.wrapperEl.appendChild(this.editorEl);
 
     modifyCSS(this.wrapperEl, {
-      visibility: "hidden",
-      minWidth: `${config.xmindNode.minWidth}px`,
+      visibility: "hidden"
     });
 
-    modifyCSS(this.editorEl, {
-      "max-width": `${config.xmindNode.maxLabelWidth}px`,
-    });
-
+    this.initRichTextEditor();
     this.container.appendChild(this.wrapperEl);
+  }
+
+  private initRichTextEditor() {
+    const className = this.get("className");
+    this.editorEl = createDom(
+      `<div id="mindmap-quill" class=${className || "g6-editable-label"}></div>`
+    );
+    this.wrapperEl.appendChild(this.editorEl);
+    const { maxWidth } = config.xmindNode.labelStyle;
+    this.editor = new Quill(this.editorEl, {
+      modules: {
+        toolbar: []
+      },
+      formats: [],
+      placeholder: "Compose an epic..."
+    });
+    this.editor.on("text-change", () => {
+      this.adjustGraphSize();
+    });
+    this.editor.root.style.cssText = `max-width: ${maxWidth}px; width: 100%`;
   }
 
   private unbindAllListeners() {
     const listeners = this.get("listeners") || {};
-    Object.keys(listeners).forEach((key) => {
+    Object.keys(listeners).forEach(key => {
       const { el, eventName, listener } = listeners[key];
       el.removeEventListener(eventName, listener);
       delete listeners[key];
@@ -119,44 +133,33 @@ export default class EditableLabel extends Base {
     listeners[key] = {
       el,
       eventName,
-      listener,
+      listener
     };
 
     el.addEventListener(eventName, listener, options);
   }
 
-  private adjustNodeSize() {
-    const { item } = this;
-    if (!item) return;
-
-    const labelShape = this.getLabelShape(item);
-    if (!labelShape) return;
-
-    const lineHeight = labelShape.attr("lineHeight");
-    modifyCSS(this.editorEl, {
-      "max-width": `${config.xmindNode.labelStyle.maxWidth}px`,
-      height: "auto",
-      "line-height": `${lineHeight}px`,
-    });
-  }
-
   private adjustGraphSize() {
-    const { clientWidth: width, clientHeight: height } = this.editorEl;
-    
-    const html = this.editorEl.innerHTML
-    const text = parseContentEditableStringToPlainText(html);
-    
+    const text = formatEditorText(this.editor.getText());
     const { item } = this;
-    const { lastRect } = this.originalTextRect;
-    if (lastRect && width === lastRect.width && height === lastRect.height) {
-      return;
-    }
     item.update({
-      label: text,
+      label: text
     });
+    const placeholderWidth = fittingLabelWidth(
+      PLACE_HOLDER,
+      config.xmindNode.labelStyle.fontSize
+    );
+    const textWidth = fittingLabelWidth(
+      text,
+      config.xmindNode.labelStyle.fontSize
+    );
+    if (textWidth > placeholderWidth) {
+      this.editor.root.style.width = "auto";
+    } else {
+      this.editor.root.style.width = (textWidth || placeholderWidth) + "px";
+    }
     this.graph.layout();
     this.adjustPosition();
-    this.originalTextRect.lastRect = { width, height };
   }
 
   private adjustPosition() {
@@ -176,19 +179,17 @@ export default class EditableLabel extends Base {
       matrix[1],
       matrix[3],
       matrix[4],
-      containerPoint.x + labelBBox.x * matrix[0],
-      containerPoint.y + labelBBox.y * matrix[3],
+      containerPoint.x,
+      containerPoint.y
     ].join();
 
+    const lineHeight = labelShape.attr("lineHeight");
     modifyCSS(this.wrapperEl, {
       font,
       transform: `matrix(${matrixString})`,
-      padding: Util.formatPadding(config.xmindNode.padding)
-        .map((n: number) => `${n}px`)
-        .join(" "),
-      paddingLeft: 0,
-      paddingRight: 0,
+      lineHeight: `${lineHeight}px`
     });
+    this.editor.root.style.margin = `${labelBBox.y / 2}px ${labelBBox.x}px`;
   }
 
   private onBlur() {
@@ -196,21 +197,19 @@ export default class EditableLabel extends Base {
     if (!item) return;
 
     const command = this.graph.get("command");
-    const text = parseContentEditableStringToPlainText(
-      this.editorEl.innerHTML
-    ).trim();
-    
+    const text = formatEditorText(this.editor.getText());
+
     if (isLabelEqual(text, this.originalLabel)) {
       return;
     }
     item.update({
-      label: this.originalLabel,
+      label: this.originalLabel
     });
     command.execute("update", {
       id: item.getID(),
       updateModel: {
-        label: text,
-      },
+        label: text
+      }
     });
   }
 
@@ -225,49 +224,26 @@ export default class EditableLabel extends Base {
     if (!labelShape) return;
 
     modifyCSS(this.wrapperEl, {
-      visibility: "visible",
+      visibility: "visible"
     });
 
     this.item = item as INode;
 
     const model = item.getModel();
-    const originalLabel = getLabelByModel(model);
-    this.originalLabel = this.editorEl.innerText = originalLabel;
+    const originalLabel = (this.originalLabel = getLabelByModel(model));
+    this.editor.setText(originalLabel, "silent");
+    this.editor.focus();
 
     this.adjustPosition = this.adjustPosition.bind(this);
 
     this.graph.on("wheel", this.adjustPosition);
 
     this.adjustPosition();
-    this.adjustNodeSize();
+    this.adjustGraphSize();
 
     this.unbindAllListeners();
 
-    const bBox = item.getBBox();
-    this.originalTextRect = {
-      itemWidth: bBox.width,
-      itemHeight: bBox.height,
-      lastRect: {
-        width: this.editorEl.clientWidth,
-        height: this.editorEl.clientHeight,
-      },
-    };
-
-    setCaretToEnd(this.editorEl)
-
-    this.bindListener(
-      "inputBlur",
-      this.editorEl,
-      "blur",
-      this.onBlur.bind(this)
-    );
-
-    this.bindListener(
-      "inputInput",
-      this.editorEl,
-      "input",
-      this.adjustGraphSize.bind(this)
-    );
+    setBounds(this.event.clientX, this.event.clientY);
 
     this.bindListener(
       "outerClick",
@@ -278,8 +254,15 @@ export default class EditableLabel extends Base {
   }
 
   private outerClick(e) {
-    const el = this.editorEl;
-    if (!e.target.contains(el)) {
+    const isInside = node => {
+      while (node !== document.body) {
+        if (node === this.editorEl) return true;
+        node = node.parentNode;
+      }
+      return false;
+    };
+    if (!isInside(e.target)) {
+      this.onBlur();
       this.onHide();
     }
   }
@@ -291,7 +274,7 @@ export default class EditableLabel extends Base {
     this.item.setState(ItemState.Editing, false);
     this.graph.off("wheel", this.adjustPosition);
     modifyCSS(this.wrapperEl, {
-      visibility: "hidden",
+      visibility: "hidden"
     });
     this.item = null;
   }
@@ -299,5 +282,6 @@ export default class EditableLabel extends Base {
   public destroy() {
     this.unbindAllListeners();
     this.container.removeChild(this.wrapperEl);
+    this.editor = null;
   }
 }

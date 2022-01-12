@@ -1,5 +1,4 @@
 import { v4 } from "uuid";
-import { decode } from "html-entities";
 import G6, {
   ComboConfig,
   EdgeConfig,
@@ -119,15 +118,6 @@ export const isFired = (shortcuts: string[] | string[][], e) => {
   });
 };
 
-export const parseContentEditableStringToPlainText = (html: string) => {
-  const str = html
-    .replace(/<br>$/, "")
-    .replace(/\n<br>$/, "")
-    .replace(/\n\n$/, "\n")
-    .replaceAll("<br>", "\n");
-  return decode(str);
-};
-
 export const cloneTree = <
   T extends {
     children?: T[];
@@ -145,18 +135,6 @@ export const cloneTree = <
   });
   return newTree;
 };
-
-export function setCaretToEnd(contentEditableElement: HTMLDivElement) {
-  if (!document.createRange) {
-    return;
-  }
-  const range = document.createRange(); //Create a range (a range is a like the selection but invisible)
-  range.selectNodeContents(contentEditableElement); //Select the entire contents of the element with the range
-  range.collapse(false); //collapse the range to the end point. false means collapse to end rather than the start
-  const selection = window.getSelection(); //get the selection object (allows you to change selection)
-  selection.removeAllRanges(); //remove any selections already made
-  selection.addRange(range); //make the range you have just created the visible selection
-}
 
 export const Clipboard = {
   key: "$_Case_Clipboard",
@@ -208,3 +186,21 @@ export function getPrevId(node: Item): string | null {
   }
   return null;
 }
+
+export function setBounds (clientX: number, clientY: number) {
+  const selection = document.getSelection();
+  const range = document.caretRangeFromPoint(clientX, clientY);
+
+  if (selection && range) {
+    selection.setBaseAndExtent(
+      range.startContainer,
+      range.startOffset,
+      range.startContainer,
+      range.startOffset,
+    );
+    return true;
+  } else {
+    return false;
+  }
+};
+

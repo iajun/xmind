@@ -8,6 +8,8 @@ import {
   fittingString,
   getLabelByModel,
 } from "../utils";
+import {PLACE_HOLDER} from '../config'
+
 
 export const drawFoldButton = (group: IGroup) => {
   group.addShape("circle", {
@@ -56,14 +58,16 @@ const getIconWidth = (count) => {
 
 export const getSizeByConfig = (config, cfg) => {
   const {
-    labelStyle: { lineHeight, fontSize, maxWidth, minWidth },
+    labelStyle: { lineHeight, fontSize, maxWidth },
     padding,
   } = config;
 
   const formattedPadding = Util.formatPadding(padding);
-  const label = fittingString(getLabelByModel(cfg), maxWidth, fontSize);
 
-  let labelWidth = Math.max(fittingLabelWidth(label, fontSize), minWidth);
+  const text = getLabelByModel(cfg) || PLACE_HOLDER;
+  const label = fittingString(text, maxWidth, fontSize);
+
+  let labelWidth = fittingLabelWidth(label, fontSize);
   labelWidth = labelWidth + fontSize > maxWidth ? maxWidth : labelWidth;
   const labelHeight = fittingLabelHeight(label, lineHeight);
 
@@ -80,12 +84,9 @@ export const getSizeByConfig = (config, cfg) => {
       maxWidth - formattedPaddingDesc[3],
       GlobalConfig.nodeDescription.labelStyle.fontSize
     );
-    descWidth = Math.max(
-      fittingLabelWidth(
-        description,
-        GlobalConfig.nodeDescription.labelStyle.fontSize
-      ),
-      minWidth
+    descWidth = fittingLabelWidth(
+      description,
+      GlobalConfig.nodeDescription.labelStyle.fontSize
     );
 
     descHeight = fittingLabelHeight(
@@ -228,7 +229,7 @@ export const drawNode = (
       textAlign: "left",
       fontSize,
       fontFamily: "PingFang SC",
-      fill: "#333",
+      fill: label === PLACE_HOLDER ? '#bbb' : "#333",
       text: label,
       lineHeight,
       ...labelStyle,

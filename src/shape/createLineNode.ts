@@ -1,6 +1,6 @@
 import { IGroup, Item, ModelConfig, ShapeOptions, Util } from "@antv/g6";
 import _ from "lodash";
-import config, { NodeConfig, setGlobal } from "../config";
+import { NodeConfig, setGlobal } from "../config";
 import { ItemState } from "../constants";
 import { TreeGraphData } from "../types";
 import {
@@ -10,7 +10,6 @@ import {
   drawNode,
 } from "./util";
 
-const NODE_BOTTOM_LINE = "node-bottom-line";
 export const FOLD_BUTTON_GROUP = "node-fold-button";
 
 const createLineNode = (
@@ -48,26 +47,18 @@ const createLineNode = (
       }
       const [width, height] = this.getSize!(model);
 
-      buttonGroup.translate(width, height);
+      buttonGroup.translate(width, height / 2);
     },
 
     setState(key?: string, value?: string | boolean, item?: Item) {
       if (!item) return;
       const keyShape = item.getKeyShape();
-      const group: IGroup = item.getContainer();
-      const path = group.findAllByName(NODE_BOTTOM_LINE)[0];
       if (key === ItemState.Selected) {
         const selectedStyles = this.options.stateStyles[ItemState.Selected];
         if (value) {
           keyShape.attr(selectedStyles);
-          path.attr({
-            stroke: selectedStyles.stroke,
-          });
         } else {
           keyShape.attr(this.options.wrapperStyle);
-          path.attr({
-            stroke: config.global.stroke,
-          });
         }
       }
     },
@@ -75,21 +66,6 @@ const createLineNode = (
       if (mapCfg) {
         cfg = mapCfg(cfg);
       }
-
-      const [width, height] = this.getSize(cfg);
-
-      group.addShape("path", {
-        name: NODE_BOTTOM_LINE,
-        attrs: {
-          stroke: config.global.stroke,
-          lineWidth: config.global.lineWidth,
-          path: [
-            ["M", 0, height],
-            ["H", width],
-          ],
-        },
-        zIndex: 2,
-      });
 
       const keyShape = drawNode(group, cfg, options);
       if (this.hasButton(cfg)) {
@@ -105,8 +81,8 @@ const createLineNode = (
     },
     getAnchorPoints() {
       return [
-        [0, 1],
-        [1, 1],
+        [0, 0.5],
+        [1, 0.5],
       ];
     },
   };

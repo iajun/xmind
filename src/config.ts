@@ -3,6 +3,8 @@ import _ from "lodash";
 import { ItemState } from "./constants";
 import { Global } from "./types";
 
+export const PLACE_HOLDER = 'please typing...';
+
 export type NodeConfig = ModelConfig & {
   labelStyle?: ShapeStyle;
   wrapperStyle?: ShapeStyle;
@@ -31,7 +33,6 @@ export default {
     labelStyle: {
       fontSize: 16,
       maxWidth: 300,
-      minWidth: 40,
       lineHeight: 18,
       fill: "#fff",
     },
@@ -62,7 +63,6 @@ export default {
     labelStyle: {
       fontSize: 14,
       maxWidth: 500,
-      minWidth: 40,
       lineHeight: 20,
       textColor: "#333",
     },
@@ -70,7 +70,6 @@ export default {
   placeholderNode: {
     labelStyle: {
       fontSize: 14,
-      minWidth: 60,
       lineHeight: 20,
       fill: "#fff",
     },

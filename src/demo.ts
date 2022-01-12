@@ -9,19 +9,21 @@ const leaf1 = {
 const leaf2 = {
   id: "3",
   type: "xmindNode",
-  label: "leaf1",
+  label: "",
 };
 
 const data = {
   id: "1",
-  type: "xmindNode",
+  type: "rootNode",
   label: "root",
   children: [leaf1, leaf2],
 };
 
-(window as any).graph = createGraph({
+const graph = (window as any).graph = createGraph({
   data,
   container: "mindmap",
   width: 1400,
   height: 800,
 });
+
+graph.fitCenter()

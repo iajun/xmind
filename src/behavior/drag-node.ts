@@ -19,7 +19,7 @@ type NodePosition = {
 const getPlaceholderModel = () => ({
   id: "dragPlaceholderNode",
   type: "dragPlaceholderNode",
-  label: "",
+  label: "        ",
 });
 
 const compute = {

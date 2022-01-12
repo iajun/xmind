@@ -1,16 +1,3 @@
-/* @import '//at.alicdn.com/t/font_2722419_lzkiwm25emi.css'; */
-@font-face {
-  font-family: 'iconfont';  /* Project id 2722419 */
-  src: url('//at.alicdn.com/t/font_2722419_lzkiwm25emi.woff2?t=1628068924653') format('woff2'),
-       url('//at.alicdn.com/t/font_2722419_lzkiwm25emi.woff?t=1628068924653') format('woff'),
-       url('//at.alicdn.com/t/font_2722419_lzkiwm25emi.ttf?t=1628068924653') format('truetype');
-}
-
-#xmind {
-  border: 1px solid gold;
-  position: relative;
-}
-
 .g6-editable {
   border-radius: 4px;
   color: #333;
@@ -19,16 +6,12 @@
   will-change: transform;
   top: 0;
   left: 0;
-  minHeight: 20px;
   background: #E2F0FE;
   width: auto;
   transform-origin: top left;
 }
 
 .g6-editable-label {
-  background: red;
-  outline: 0;
-  height: auto;
   white-space: pre-wrap;
 }
 
@@ -37,4 +20,20 @@
   top: 0;
   left: 0;
   transform-origin: top left;
+}
+
+.ql-editor > p {
+  margin: 0;
+  padding: 0;
+}
+
+.ql-editor:focus-visible {
+  outline: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ql-clipboard,.ql-hidden {
+  display: none;
 }

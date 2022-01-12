@@ -47,6 +47,7 @@ function getDefaultOptions(): IGraphOptions {
     layout: {
       type: "mindmap",
       direction: "H",
+      getHGap: () => 40,
       getWidth: (node) => {
         const nodeConfig = config.global.registeredNodes[node.type];
         if (!nodeConfig) return 0;

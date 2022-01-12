@@ -1,6 +1,7 @@
 import { ICommand, TreeGraphData } from "./../types";
 import Graph from "../graph";
 import _ from "lodash";
+import { ItemState } from "../constants";
 
 export interface UpdateCommandParams {
   id: string;
@@ -28,7 +29,7 @@ class UpdateCommand implements ICommand<UpdateCommandParams> {
   }
 
   canExecute(): boolean {
-    const nodes = this.graph.getSelectedNodes();
+    const nodes = this.graph.findAllByState('node', ItemState.Editing);
     return nodes.length === 1;
   }
 
@@ -40,7 +41,7 @@ class UpdateCommand implements ICommand<UpdateCommandParams> {
     const { graph } = this;
     const { id, updateModel } = this.params;
     graph.updateItem(id, updateModel);
-    graph.layout(false);
+    graph.layout();
   }
 
   undo(): void {
