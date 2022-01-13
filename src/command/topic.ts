@@ -64,13 +64,11 @@ class TopicCommand implements ICommand<TopicCommandParams> {
     const { id, nextId, parentId } = params;
     const newModel = {
       id,
-      label: "topic",
+      label: "",
       type: "xmindNode" as NodeType,
       children: [],
     };
     graph.placeNode(newModel, { nextId, parentId });
-    graph.setSelectedItems([id]);
-    this.graph.layout(false);
   }
 }
 

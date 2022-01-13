@@ -5,7 +5,7 @@ import G6, {
   IGraph,
   Item,
   NodeConfig,
-  TreeGraphData,
+  TreeGraphData
 } from "@antv/g6";
 import _ from "lodash";
 import { EditorEvent } from "./constants";
@@ -22,7 +22,7 @@ export const fittingString = (
   let currentWidth = 0;
   let res = "";
   let tmp = "";
-  text.split("").forEach((letter) => {
+  text.split("").forEach(letter => {
     if (isTextWrap(letter)) {
       res += `${tmp}\n`;
       currentWidth = 0;
@@ -51,7 +51,7 @@ export const fittingString = (
 
 export const fittingLabelWidth = (label: string, fontSize: number) => {
   const maxLabelWidth = Math.max(
-    ...label.split("\n").map((line) => Util.getTextSize(line, fontSize)[0])
+    ...label.split("\n").map(line => Util.getTextSize(line, fontSize)[0])
   );
   return maxLabelWidth;
 };
@@ -95,24 +95,24 @@ export const isFired = (shortcuts: string[] | string[][], e) => {
   return shortcuts.some((shortcut: string | string[]) => {
     const { key } = e;
 
+    let isMatched = false;
     if (!Array.isArray(shortcut)) {
-      return shortcut === key;
+      isMatched = shortcut === key;
+    } else {
+      isMatched = shortcut.every((item, index) => {
+        if (index === shortcut.length - 1) {
+          return item === key;
+        }
+        return e[item];
+      });
     }
-
-    const isMatched = shortcut.every((item, index) => {
-      if (index === shortcut.length - 1) {
-        return item === key;
-      }
-
-      return e[item];
-    });
 
     // 不要按下其他按键
     if (isMatched) {
       return _.difference(
         ["metaKey", "shiftKey", "ctrlKey", "altKey"],
         shortcut
-      ).every((item) => !e[item]);
+      ).every(item => !e[item]);
     }
     return false;
   });
@@ -156,7 +156,7 @@ export const Clipboard = {
     }
     data[Clipboard.key] = true;
     return localStorage.setItem(Clipboard.key, JSON.stringify(data));
-  },
+  }
 };
 
 export function getParentId(node: Item): string | null {
@@ -169,7 +169,7 @@ export function getNextId(node: Item): string | null {
   const parent = node.get("parent");
   if (!parent) return null;
   const children = parent.getModel().children || [];
-  const idx = children.findIndex((item) => item.id === node.getID());
+  const idx = children.findIndex(item => item.id === node.getID());
   if (~idx) {
     return children[idx + 1]?.id || null;
   }
@@ -180,14 +180,14 @@ export function getPrevId(node: Item): string | null {
   const parent = node.get("parent");
   if (!parent) return null;
   const children = parent.getModel().children || [];
-  const idx = children.findIndex((item) => item.id === node.getID());
+  const idx = children.findIndex(item => item.id === node.getID());
   if (~idx) {
     return children[idx - 1]?.id || null;
   }
   return null;
 }
 
-export function setBounds (clientX: number, clientY: number) {
+export function setBounds(clientX: number, clientY: number) {
   const selection = document.getSelection();
   const range = document.caretRangeFromPoint(clientX, clientY);
 
@@ -196,11 +196,10 @@ export function setBounds (clientX: number, clientY: number) {
       range.startContainer,
       range.startOffset,
       range.startContainer,
-      range.startOffset,
+      range.startOffset
     );
     return true;
   } else {
     return false;
   }
-};
-
+}

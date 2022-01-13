@@ -27,11 +27,13 @@ export type EditableLabelConfig = {
 
 const formatEditorText = (text: string) => (text || "").replace(/\n$/, "");
 
+let lastShowTime = 0;
+
 export default class EditableLabel extends Base {
   private editorEl!: HTMLDivElement;
   private wrapperEl!: HTMLDivElement;
   private container!: HTMLDivElement;
-  private event!: IG6GraphEvent;
+  private event?: IG6GraphEvent;
   private editor!: Quill;
   private graph!: Graph;
   private item?: INode | null;
@@ -39,7 +41,7 @@ export default class EditableLabel extends Base {
 
   getDefaultCfgs() {
     return {
-      shortcuts: [["metaKey", "Enter"]],
+      shortcuts: [" ", "Enter"],
       shouldBegin() {
         return true;
       }
@@ -60,14 +62,15 @@ export default class EditableLabel extends Base {
   }
 
   onKeyUp(e: IG6GraphEvent) {
-    const selectedNode = this.graph.getSelectedNodes()[0];
-    if (
-      !selectedNode ||
-      selectedNode.hasState(ItemState.Editing) ||
-      !isFired(this.get("shortcuts"), e)
-    )
-      return;
-    this.onShow(selectedNode);
+    const isSelected = this.graph.hasState(ItemState.Selected);
+    const isEditing = this.graph.hasState(ItemState.Editing);
+    if (isSelected && !isEditing && isFired([this.get("shortcuts")[0]], e)) {
+      this.onShow(this.graph.getSelectedNodes()[0]);
+    }
+
+    if (isEditing && isFired([this.get("shortcuts")[1]], e)) {
+      this.onHide();
+    }
   }
 
   private getLabelShape(target: Item): IElement | null {
@@ -80,6 +83,13 @@ export default class EditableLabel extends Base {
     const graph = (this.graph = this.get("graph"));
     this.container = graph.get("container");
     this.wrapperEl = createDom(`<div class='g6-editable' />`);
+
+    graph.on("afteritemstatechange", ({ enabled, item, state }) => {
+      if (state === ItemState.Editing && enabled) {
+        this.onShow(item);
+        lastShowTime = Date.now();
+      }
+    });
 
     modifyCSS(this.wrapperEl, {
       visibility: "hidden"
@@ -98,7 +108,22 @@ export default class EditableLabel extends Base {
     const { maxWidth } = config.xmindNode.labelStyle;
     this.editor = new Quill(this.editorEl, {
       modules: {
-        toolbar: []
+        toolbar: [],
+        keyboard: {
+          bindings: {
+            handleEnter: {
+              key: "Enter",
+              handler: function() {}
+            },
+            handleLinebreak: {
+              key: "Enter",
+              shiftKey: true,
+              handler: range => {
+                this.editor.insertText(range.index, "\n", "api");
+              }
+            }
+          }
+        }
       },
       formats: [],
       placeholder: "Compose an epic..."
@@ -231,8 +256,8 @@ export default class EditableLabel extends Base {
 
     const model = item.getModel();
     const originalLabel = (this.originalLabel = getLabelByModel(model));
-    this.editor.setText(originalLabel, "silent");
-    this.editor.focus();
+    this.editor;this.editor.setText(originalLabel, "silent");
+    setTimeout(() => this.editor.focus())
 
     this.adjustPosition = this.adjustPosition.bind(this);
 
@@ -243,7 +268,9 @@ export default class EditableLabel extends Base {
 
     this.unbindAllListeners();
 
-    setBounds(this.event.clientX, this.event.clientY);
+    if (this.event) {
+      setBounds(this.event.clientX, this.event.clientY);
+    }
 
     this.bindListener(
       "outerClick",
@@ -269,9 +296,11 @@ export default class EditableLabel extends Base {
 
   private onHide() {
     if (!this.item) return;
+    if (Date.now() - lastShowTime < 500) return;
     this.unbindAllListeners();
 
     this.item.setState(ItemState.Editing, false);
+    this.item.setState(ItemState.Selected, true);
     this.graph.off("wheel", this.adjustPosition);
     modifyCSS(this.wrapperEl, {
       visibility: "hidden"

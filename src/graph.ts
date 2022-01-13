@@ -5,7 +5,7 @@ import _ from "lodash";
 import { getParentId } from "./utils";
 
 class Graph extends TreeGraph {
-  $isEditing = false
+  $isEditing = false;
 
   isRootNode(item: string) {
     const rootNode = this.get("data");
@@ -21,7 +21,7 @@ class Graph extends TreeGraph {
   keepMatrix<Args extends any[], Result>(fn: (...args: Args) => Result) {
     const matrix = this.getGroup().getMatrix();
     const context = this;
-    return function (...args: Args): Result {
+    return function(...args: Args): Result {
       const result = fn.apply(context, args);
       context.getGroup().setMatrix(matrix);
       return result;
@@ -29,7 +29,7 @@ class Graph extends TreeGraph {
   }
 
   getLastSibling(id: string) {
-    return this.findAll("node", (item) => item.getModel().nextId === id)[0];
+    return this.findAll("node", item => item.getModel().nextId === id)[0];
   }
 
   private ensureNodeExpanded(id) {
@@ -38,7 +38,7 @@ class Graph extends TreeGraph {
     const model = item.getModel();
     if (model.collapsed) {
       item.update({
-        collapsed: false,
+        collapsed: false
       });
       this.layout();
     }
@@ -69,10 +69,11 @@ class Graph extends TreeGraph {
       | undefined;
     if (!children) return;
 
-    const idx = children.findIndex((item) => item.id === nextItem.getID());
+    const idx = children.findIndex(item => item.id === nextItem.getID());
 
     children.splice(idx, 0, model);
     this.updateChildren([...children], parentId);
+    this.setItemState(model.id, ItemState.Editing, true);
   }
 
   changeData(data: GraphData | TreeGraphData) {
@@ -85,6 +86,7 @@ class Graph extends TreeGraph {
     if (!parentId) return;
     this.ensureNodeExpanded(parentId);
     this.keepMatrix(super.addChild)(data, parent);
+    this.setItemState(data.id, ItemState.Editing, true);
   }
 
   removeChild(id: string): void {
@@ -119,11 +121,11 @@ class Graph extends TreeGraph {
       const selectedNodes = this.getSelectedNodes();
       const selectedEdges = this.getSelectedEdges();
 
-      [...selectedNodes, ...selectedEdges].forEach((node) => {
+      [...selectedNodes, ...selectedEdges].forEach(node => {
         this.setItemState(node, ItemState.Selected, false);
       });
 
-      items.forEach((item) => {
+      items.forEach(item => {
         this.setItemState(item, ItemState.Selected, true);
       });
     });
@@ -134,7 +136,7 @@ class Graph extends TreeGraph {
     const selectedEdges = this.getSelectedEdges();
 
     this.executeBatch(() => {
-      [...selectedNodes, ...selectedEdges].forEach((item) => {
+      [...selectedNodes, ...selectedEdges].forEach(item => {
         if (shouldUpdate(item)) {
           this.setItemState(item, ItemState.Selected, false);
         }
@@ -159,11 +161,17 @@ class Graph extends TreeGraph {
   }
 
   get isEditing() {
-    return this.$isEditing || !!this.findAllByState('node', ItemState.Editing).length;
+    return (
+      this.$isEditing || !!this.findAllByState("node", ItemState.Editing).length
+    );
   }
 
   setEditState(state: boolean) {
     this.$isEditing = state;
+  }
+
+  hasState(state: ItemState): boolean {
+    return !!this.findAllByState("node", state).length;
   }
 }
 
