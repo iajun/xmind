@@ -1,8 +1,9 @@
-import { ICommand } from "../types";
+import Graph from "../graph";
 import { CTRL_KEY } from "../utils";
+import BaseCommand from "./base";
 import CommandManager from "./manager";
 
-class undoCommand implements ICommand<{}> {
+class undoCommand extends BaseCommand {
   private manager: CommandManager;
 
   name = "undo";
@@ -11,7 +12,8 @@ class undoCommand implements ICommand<{}> {
 
   shortcuts = [[CTRL_KEY, "z"]];
 
-  constructor(manager: CommandManager) {
+  constructor(graph: Graph, manager: CommandManager) {
+    super(graph);
     this.manager = manager;
   }
 
@@ -19,12 +21,7 @@ class undoCommand implements ICommand<{}> {
 
   canExecute() {
     const { commandIndex } = this.manager;
-
     return commandIndex > 0;
-  }
-
-  shouldExecute() {
-    return true;
   }
 
   canUndo() {
@@ -35,12 +32,9 @@ class undoCommand implements ICommand<{}> {
     const commandManager: CommandManager = this.manager;
     const { commandQueue, commandIndex } = commandManager;
     const lastCommand = commandQueue[commandIndex - 1];
-    lastCommand.undo();
-
     commandManager.commandIndex -= 1;
+    return lastCommand.undo();
   }
-
-  undo() {}
 }
 
 export default undoCommand;

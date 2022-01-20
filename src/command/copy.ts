@@ -1,56 +1,31 @@
-import { ICommand, TreeGraphData } from "../types";
-import Graph from "../graph";
-import _ from "lodash";
-import { Clipboard, CTRL_KEY } from "../utils";
+import { TreeGraphData } from "../types";
+import {
+  Clipboard,
+  createClipboardItem,
+  CTRL_KEY,
+} from "../utils";
+import BaseCommand from "./base";
 
-export interface CopyCommandParams {
+export interface CutCommandParams {
   id: string;
+  parentId: string;
+  nextId: string | null;
   model: TreeGraphData;
 }
 
-class CopyCommand implements ICommand<CopyCommandParams> {
-  private graph: Graph;
+class CopyCommand extends BaseCommand {
   name = "copy";
-
-  params = {
-    id: "",
-    model: {} as TreeGraphData,
-  };
-
   shortcuts = [[CTRL_KEY, "c"]];
 
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
+  init() {}
 
-  canUndo(): boolean {
+  canUndo() {
     return false;
   }
 
-  undo(): void {}
-
-  canExecute(): boolean {
-    const selectedNodes = this.graph.getSelectedNodes();
-    return (
-      selectedNodes.length === 1 &&
-      !this.graph.isRootNode(selectedNodes[0].getID())
-    );
-  }
-
-  init() {
-    const { graph } = this;
-    const selectedNodes = graph.getSelectedNodes();
-    const id = selectedNodes[0].getID();
-    const model = graph.findDataById(id) as TreeGraphData;
-    this.params = {
-      id,
-      model,
-    };
-  }
-
   execute() {
-    const { id, model } = this.params;
-    Clipboard.set({ id, model });
+    Clipboard.set(createClipboardItem(this.target));
+    return super.execute();
   }
 }
 

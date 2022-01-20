@@ -45,7 +45,7 @@ function createCommandManager(graph: Graph, commandOptions?: CommandOption[]) {
     new FoldCommand(graph),
     new UnFoldCommand(graph),
     new UpdateCommand(graph),
-    new UndoCommand(manager),
+    new UndoCommand(graph, manager),
     new RedoCommand(graph, manager),
     new CopyCommand(graph),
     new PasteCommand(graph),

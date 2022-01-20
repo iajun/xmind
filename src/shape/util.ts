@@ -8,8 +8,6 @@ import {
   fittingString,
   getLabelByModel,
 } from "../utils";
-import {PLACE_HOLDER} from '../config'
-
 
 export const drawFoldButton = (group: IGroup) => {
   group.addShape("circle", {
@@ -64,7 +62,7 @@ export const getSizeByConfig = (config, cfg) => {
 
   const formattedPadding = Util.formatPadding(padding);
 
-  const text = getLabelByModel(cfg) || PLACE_HOLDER;
+  const text = getLabelByModel(cfg) || GlobalConfig.global.placeholder(cfg);
   const label = fittingString(text, maxWidth, fontSize);
 
   let labelWidth = fittingLabelWidth(label, fontSize);
@@ -229,7 +227,7 @@ export const drawNode = (
       textAlign: "left",
       fontSize,
       fontFamily: "PingFang SC",
-      fill: label === PLACE_HOLDER ? '#bbb' : "#333",
+      fill: label === GlobalConfig.global.placeholder(cfg) ? '#bbb' : "#333",
       text: label,
       lineHeight,
       ...labelStyle,

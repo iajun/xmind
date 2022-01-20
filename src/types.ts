@@ -1,5 +1,13 @@
-import { IEdge, INode, TreeGraphData as ITreeGraphData } from "@antv/g6";
+import {
+  ComboConfig,
+  EdgeConfig,
+  IEdge,
+  INode,
+  TreeGraphData as ITreeGraphData
+} from "@antv/g6";
 import { NodeConfig } from "./config";
+
+export type NodeModel = NodeConfig | EdgeConfig | ComboConfig | TreeGraphData;
 
 export type Node = {
   id: string;
@@ -16,11 +24,9 @@ export type TreeGraphData = ITreeGraphData & {
 
 export type NodeType = "rootNode" | "xmindNode";
 
-export interface ICommand<P = object> {
+export interface ICommand {
   /** 命令名称 */
   name: string;
-  /** 命令参数 */
-  params: P;
   /** 是否可以执行 */
   canExecute(): boolean;
   /** 是否应该执行，外界注入 */
@@ -28,13 +34,14 @@ export interface ICommand<P = object> {
   /** 是否可以撤销 */
   canUndo(): boolean;
   /** 执行命令 */
-  execute(): void;
+  execute(): Transaction[];
   /** 撤销命令 */
-  undo(): void;
+  undo(): Transaction[];
   /** 初始化参数 */
   init(): void;
   /** 命令快捷键 */
   shortcuts: string[] | string[][];
+  transactions: [Transaction[], Transaction[]];
 }
 
 export type ItemType = "node" | "edge";
@@ -50,4 +57,23 @@ export type Global = {
     gap: number;
   };
   registeredNodes: Record<string, NodeConfig>;
+  placeholder: (model: any) => string;
 };
+
+export enum TransactionType {
+  ADD,
+  UPDATE,
+  REMOVE
+}
+
+export type Transaction = {
+  command: TransactionType;
+  payload: {
+    model: TreeGraphData;
+    parentId?: string | null ;
+    nextId?: string | null ;
+  };
+};
+
+export type TransactionPayload = Transaction['payload'];
+

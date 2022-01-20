@@ -3,12 +3,18 @@ import G6, {
   ComboConfig,
   EdgeConfig,
   IGraph,
+  INode,
   Item,
-  NodeConfig,
-  TreeGraphData
+  NodeConfig
 } from "@antv/g6";
 import _ from "lodash";
 import { EditorEvent } from "./constants";
+import {
+  Transaction,
+  TransactionPayload,
+  TransactionType,
+  TreeGraphData
+} from "./types";
 const { Util } = G6;
 
 const isTextWrap = (str: string) => str === "\n";
@@ -202,4 +208,30 @@ export function setBounds(clientX: number, clientY: number) {
   } else {
     return false;
   }
+}
+
+export function getNodeInfo(node: INode) {
+  return {
+    model: node.getModel() as TreeGraphData,
+    parentId: getParentId(node),
+    nextId: getNextId(node)
+  };
+}
+
+export function createTransaction(
+  type: TransactionType,
+  payload: TransactionPayload
+): Transaction {
+  return {
+    command: type,
+    payload
+  };
+}
+
+export function createClipboardItem(node: INode) {
+  const model = node.getModel() as TreeGraphData;
+  return {
+    id: model.id,
+    model
+  };
 }

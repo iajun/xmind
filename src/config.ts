@@ -20,6 +20,7 @@ const global: Global = {
     gap: 6,
   },
   registeredNodes: {},
+  placeholder: () => PLACE_HOLDER,
 };
 
 export function setGlobal(options: Partial<Global>) {

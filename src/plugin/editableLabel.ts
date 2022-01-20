@@ -15,7 +15,7 @@ import {
   isLabelEqual,
   setBounds
 } from "../utils";
-import config, { PLACE_HOLDER } from "../config";
+import config from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
 import Quill from "./quill";
@@ -171,7 +171,7 @@ export default class EditableLabel extends Base {
       label: text
     });
     const placeholderWidth = fittingLabelWidth(
-      PLACE_HOLDER,
+      config.global.placeholder(item.getModel()),
       config.xmindNode.labelStyle.fontSize
     );
     const textWidth = fittingLabelWidth(
@@ -204,17 +204,17 @@ export default class EditableLabel extends Base {
       matrix[1],
       matrix[3],
       matrix[4],
-      containerPoint.x,
-      containerPoint.y
+      containerPoint.x + labelBBox.x,
+      containerPoint.y + 1
     ].join();
 
     const lineHeight = labelShape.attr("lineHeight");
     modifyCSS(this.wrapperEl, {
       font,
       transform: `matrix(${matrixString})`,
-      lineHeight: `${lineHeight}px`
+      lineHeight: `${lineHeight}px`,
+      padding: `${labelBBox.y / 2}px 0`
     });
-    this.editor.root.style.margin = `${labelBBox.y / 2}px ${labelBBox.x}px`;
   }
 
   private onBlur() {

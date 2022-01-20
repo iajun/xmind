@@ -73,7 +73,6 @@ class Graph extends TreeGraph {
 
     children.splice(idx, 0, model);
     this.updateChildren([...children], parentId);
-    this.setItemState(model.id, ItemState.Editing, true);
   }
 
   changeData(data: GraphData | TreeGraphData) {
@@ -86,11 +85,16 @@ class Graph extends TreeGraph {
     if (!parentId) return;
     this.ensureNodeExpanded(parentId);
     this.keepMatrix(super.addChild)(data, parent);
-    this.setItemState(data.id, ItemState.Editing, true);
   }
 
   removeChild(id: string): void {
     this.keepMatrix(super.removeChild)(id);
+  }
+
+  getCurrentNode(): INode | null {
+    const nodes = this.getSelectedNodes();
+    if (nodes.length !== 1) return null;
+    return nodes[0];
   }
 
   /** 获取选中节点 */
@@ -164,6 +168,12 @@ class Graph extends TreeGraph {
     return (
       this.$isEditing || !!this.findAllByState("node", ItemState.Editing).length
     );
+  }
+
+  selectNode(id: string) {
+    const node = this.findById(id);
+    if (!node) return;
+    this.setSelectedItems([node]);
   }
 
   setEditState(state: boolean) {

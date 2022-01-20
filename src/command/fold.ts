@@ -1,64 +1,30 @@
-import { ICommand, TreeGraphData } from "./../types";
-import Graph from "../graph";
-import { CTRL_KEY } from "../utils";
+import { TransactionType, TreeGraphData } from "../types";
+import { createTransaction, CTRL_KEY, getNodeInfo } from "../utils";
+import BaseCommand from "./base";
 
-export interface FoldCommandParams {
-  id: string;
-}
-
-class FoldCommand implements ICommand<FoldCommandParams> {
-  private graph: Graph;
+class FoldCommand extends BaseCommand {
   name = "fold";
-
-  params = {
-    id: "",
-  };
-
-  shortcuts = [
-    [CTRL_KEY, "/"],
-  ];
-
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
-
-  canUndo(): boolean {
-    return true;
-  }
-
-  undo(): void {
-    this.execute();
-  }
+  shortcuts = [[CTRL_KEY, "/"]];
 
   canExecute(): boolean {
-    const selectedNodes = this.graph.getSelectedNodes();
+    const { target } = this;
+    if (!target) return false;
 
-    if (!selectedNodes.length) return false;
-
-    const selectedNode = selectedNodes[0];
-
-    const model = selectedNode.getModel() as TreeGraphData;
-
-    if (model.collapsed || !model.children || !model.children.length) return false;
+    const model = this.target.getModel() as TreeGraphData;
+    if (!model.children || !model.children.length || model.collapsed) {
+      return false;
+    }
 
     return true;
   }
 
   init() {
-    const { graph } = this;
-    const selectedNodes = graph.getSelectedNodes();
-    if (!selectedNodes.length) return;
-    this.params = {
-      id: selectedNodes[0].getID(),
-    };
-  }
-
-  execute() {
-    const { id } = this.params;
-    const item = this.graph.findDataById(id);
-    if (!item) return;
-    item.collapsed = !item.collapsed;
-    this.graph.layout(false);
+    const nodeInfo = getNodeInfo(this.target);
+    const { model } = nodeInfo;
+    this.transactions = [
+      [createTransaction(TransactionType.UPDATE, {model: {...model, collapsed: true}})],
+      [createTransaction(TransactionType.UPDATE, {model: {...model, collapsed: false}})],
+    ]
   }
 }
 
