@@ -2,26 +2,24 @@ import Graph from "../graph";
 import { CTRL_KEY } from "../utils";
 import BaseCommand from "./base";
 import CommandManager from "./manager";
+import Queue from "./queue";
 
 class undoCommand extends BaseCommand {
-  private manager: CommandManager;
-
   name = "undo";
 
   params = {};
+
+  private queue: Queue<BaseCommand>;
 
   shortcuts = [[CTRL_KEY, "z"]];
 
   constructor(graph: Graph, manager: CommandManager) {
     super(graph);
-    this.manager = manager;
-  }
-
-  init(): void {}
+    this.queue = manager.queue;
+  };
 
   canExecute() {
-    const { commandIndex } = this.manager;
-    return commandIndex > 0;
+    return !!this.queue.current
   }
 
   canUndo() {
@@ -29,11 +27,9 @@ class undoCommand extends BaseCommand {
   }
 
   execute() {
-    const commandManager: CommandManager = this.manager;
-    const { commandQueue, commandIndex } = commandManager;
-    const lastCommand = commandQueue[commandIndex - 1];
-    commandManager.commandIndex -= 1;
-    return lastCommand.undo();
+    const transactions = this.queue.current.undo()
+    this.queue.back();
+    return transactions;
   }
 }
 

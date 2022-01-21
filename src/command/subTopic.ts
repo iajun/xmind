@@ -1,62 +1,37 @@
 import { v4 } from "uuid";
-import { ICommand } from "./../types";
-import Graph from "../graph";
+import { NodeType, TransactionType } from "./../types";
+import { createTransaction } from "../utils";
+import BaseCommand from "./base";
 
 export interface TopicCommandParams {
-  newId: string;
-  sourceId: string;
+  parentId: string | null;
+  id: string | null;
+  selectedId: string | null;
+  nextId: string | null;
 }
 
-class TopicCommand implements ICommand<TopicCommandParams> {
-  private graph: Graph;
-  name = "sub-topic";
-
-  params = {
-    sourceId: "",
-    newId: "",
-  };
-
+class SubTopicCommand extends BaseCommand {
+  name = "subTopic";
   shortcuts = ["Tab"];
 
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
-
-  canUndo(): boolean {
-    return true;
-  }
-
-  undo(): void {
-    const { graph, params } = this;
-    const { newId, sourceId } = params;
-    graph.removeChild(newId);
-    graph.setSelectedItems([sourceId]);
-  }
-
-  canExecute(): boolean {
-    const { graph } = this;
-
-    const selectedNodes = graph.getSelectedNodes();
-    return selectedNodes.length === 1;
-  }
-
   init() {
-    const { graph } = this;
-    const selectedNodes = graph.getSelectedNodes();
-    this.params.sourceId = selectedNodes[0].getID();
-    const id = v4();
-    this.params.newId = id;
-  }
-
-  execute() {
-    const { graph, params } = this;
-    const { sourceId, newId } = params;
-    const item = graph.findById(sourceId)!;
-    graph.addChild(
-      { id: newId, label: "", type: "xmindNode", children: [] },
-      item
-    );
+    const model = {
+      id: v4(),
+      label: "",
+      type: "xmindNode" as NodeType,
+      children: []
+    };
+    this.transactions = [
+      [
+        createTransaction(TransactionType.ADD, {
+          model,
+          nextId: null,
+          parentId: this.target.getID()
+        })
+      ],
+      [createTransaction(TransactionType.REMOVE, { model })]
+    ];
   }
 }
 
-export default TopicCommand;
+export default SubTopicCommand;

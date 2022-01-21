@@ -1,61 +1,35 @@
-import Graph from '../graph';
-import { ICommand } from '../types';
-import { CTRL_KEY } from '../utils';
-import CommandManager from './manager';
+import Graph from "../graph";
+import { CTRL_KEY } from "../utils";
+import BaseCommand from "./base";
+import CommandManager from "./manager";
+import Queue from "./queue";
 
-class redoCommand implements ICommand<{}> {
-  private manager: CommandManager;
-  private graph: Graph;
+class redoCommand extends BaseCommand {
+  name = "redo";
 
-  name = 'redo'
-
-  params= {}
+  private queue: Queue<BaseCommand>;
 
   shortcuts= [
     [CTRL_KEY, 'shiftKey', 'z'],
   ]
 
   constructor(graph: Graph, manager: CommandManager) {
-    this.manager = manager;
-    this.graph = graph;
-  }
-
-  init(): void {
-  }
+    super(graph);
+    this.queue = manager.queue;
+  };
 
   canExecute() {
-    const { commandIndex, commandQueue } = this.manager;
-
-    return commandIndex < commandQueue.length ;
-  }
-
-  shouldExecute() {
-    return true;
+    return this.queue.canFore()
   }
 
   canUndo() {
     return false;
   }
 
-
   execute() {
-    const {manager} = this;
-    const { commandQueue, commandIndex } = manager;
-
-    const command  = commandQueue[commandIndex];
-    
-    if (command && (command.params as any).id) {
-      const id = (command.params as any).id;
-      this.graph.setSelectedItems([id])
-    }
-
-    command.execute();
-
-    manager.commandIndex += 1;
+    this.queue.fore();
+    return this.queue.current.execute()
   }
-
-  undo() {}
-
-};
+}
 
 export default redoCommand;

@@ -1,62 +1,46 @@
-import { ICommand, TreeGraphData } from "./../types";
-import Graph from "../graph";
+import { TreeGraphData, TransactionType } from "./../types";
 import _ from "lodash";
-import { ItemState } from "../constants";
+import BaseCommand from "./base";
+import { createTransaction } from "../utils";
+import { INode } from "@antv/g6-core";
 
 export interface UpdateCommandParams {
-  id: string;
-  originalModel: Partial<TreeGraphData>;
-  updateModel: Partial<TreeGraphData>;
-  forceLayout: Boolean;
+  updateModel: TreeGraphData;
 }
 
-class UpdateCommand implements ICommand<UpdateCommandParams> {
-  private graph: Graph;
-
+class UpdateCommand extends BaseCommand {
   name = "update";
 
-  shortcuts = []
-
-  params = {
-    id: "",
-    originalModel: {},
-    updateModel: {},
-    forceLayout: false,
-  };
-
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
-
-  canExecute(): boolean {
-    const nodes = this.graph.findAllByState('node', ItemState.Editing);
-    return nodes.length === 1;
-  }
+  shortcuts = [];
 
   canUndo(): boolean {
     return true;
   }
 
-  execute(): void {
-    const { graph } = this;
-    const { id, updateModel } = this.params;
-    graph.updateItem(id, updateModel);
-    graph.layout();
+  canExecute(): boolean {
+    return true;
   }
 
-  undo(): void {
+  init(params: UpdateCommandParams) {
     const { graph } = this;
-    const { id, originalModel } = this.params;
-    graph.updateItem(id, originalModel);
-    graph.layout(false);
-  }
+    const { updateModel } = params;
+    this.target = graph.findById(updateModel.id) as INode;
 
-  init(): void {
-    const { graph } = this;
-    const { updateModel, id } = this.params;
-    const updatePaths = Object.keys(updateModel);
-    const originalModel = _.pick(graph.findById(id).getModel(), updatePaths);
-    this.params.originalModel = originalModel;
+    this.transactions = [
+      [
+        createTransaction(TransactionType.UPDATE, {
+          model: updateModel
+        })
+      ],
+      [
+        createTransaction(TransactionType.UPDATE, {
+          model: {
+            ...updateModel,
+            ..._.pick(this.target.getModel() as TreeGraphData, Object.keys(updateModel))
+          } 
+        })
+      ]
+    ];
   }
 }
 

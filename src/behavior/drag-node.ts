@@ -19,7 +19,7 @@ type NodePosition = {
 const getPlaceholderModel = () => ({
   id: "dragPlaceholderNode",
   type: "dragPlaceholderNode",
-  label: "        ",
+  label: "        "
 });
 
 const compute = {
@@ -29,7 +29,7 @@ const compute = {
   ) => {
     return {
       x: point.x - offset.offsetX,
-      y: point.y - offset.offsetY,
+      y: point.y - offset.offsetY
     };
   },
   containerCenter: (graph: Graph, item: INode) => {
@@ -54,7 +54,7 @@ const compute = {
     let lastMin = Number.MAX_SAFE_INTEGER;
     const map = _.keyBy(list, "id");
 
-    list.forEach((item) => {
+    list.forEach(item => {
       if (x <= item.x + item.width) {
         return;
       }
@@ -71,14 +71,14 @@ const compute = {
     if (!closestParent) return { parent: null, sibling: null };
 
     const siblingList = list.filter(
-      (item) => item.x < x && item.x + item.width > x
+      item => item.x < x && item.x + item.width > x
     );
 
     let closestNext = null,
       closestPrev = null,
       lastNextMin = Number.MAX_SAFE_INTEGER,
       lastPrevMin = lastNextMin;
-    siblingList.forEach((item) => {
+    siblingList.forEach(item => {
       let dis = y - item.y;
       // cursor under the item
       if (dis > 0) {
@@ -117,9 +117,9 @@ const compute = {
 
     return {
       parent: closestParent,
-      sibling: closestNext,
+      sibling: closestNext
     };
-  },
+  }
 };
 
 const DragNodeBehavior: BehaviorOption = {
@@ -131,13 +131,13 @@ const DragNodeBehavior: BehaviorOption = {
       },
       shouldDragFrom() {
         return true;
-      },
+      }
     };
   },
 
   getEvents(): { [key in G6Event]?: string } {
     return {
-      "node:dragstart": "onDragStart",
+      "node:dragstart": "onDragStart"
     };
   },
 
@@ -156,7 +156,7 @@ const DragNodeBehavior: BehaviorOption = {
     this.onDragEnd = this.onDragEnd.bind(this);
 
     el.addEventListener("mousemove", this.onDragging, {
-      passive: false,
+      passive: false
     });
     el.addEventListener("mouseup", this.onDragEnd);
 
@@ -167,23 +167,23 @@ const DragNodeBehavior: BehaviorOption = {
     this.model = model;
     this.originalPosition = {
       parentId: getParentId(e.item),
-      nextId: getNextId(e.item),
+      nextId: getNextId(e.item)
     };
 
     this.itemPosition = {
       offsetX: e.x - itemBBox.x,
       offsetY: e.y - itemBBox.y,
-      ..._.pick(itemBBox, ["width", "height"]),
+      ..._.pick(itemBBox, ["width", "height"])
     };
 
     this.placeholderModel = getPlaceholderModel();
-    graph.removeChild(this.model.id);
+    graph.removeChild(model.id);
   },
 
   cacheAllPoints() {
     this.nodePoints = [];
 
-    this.get("graph").findAll("node", (node) => {
+    this.get("graph").findAll("node", node => {
       const bBox = node.getContainer().getBBox();
       const matrix = node.getContainer().getMatrix();
       const model = node.getModel();
@@ -205,14 +205,14 @@ const DragNodeBehavior: BehaviorOption = {
         parentId: getParentId(node),
         nextId: getNextId(node),
         // node label
-        label: model.label,
+        label: model.label
       });
       return false;
     });
   },
 
   onDragging: _.throttle(
-    function (e: MouseEvent) {
+    function(e: MouseEvent) {
       const graph: Graph = this.graph;
       if (!this.nodePoints) {
         this.cacheAllPoints();
@@ -268,7 +268,7 @@ const DragNodeBehavior: BehaviorOption = {
     30,
     {
       leading: true,
-      trailing: false,
+      trailing: false
     }
   ),
 
@@ -280,12 +280,12 @@ const DragNodeBehavior: BehaviorOption = {
     if (!parent || (parent && !shouldDragTo(graph.findById(parent.id)))) {
       return {
         nextId: originalPosition.nextId,
-        parentId: originalPosition.parentId,
+        parentId: originalPosition.parentId
       };
     } else {
       return {
         parentId: parent.id,
-        nextId: sibling?.id || null,
+        nextId: sibling?.id || null
       };
     }
   },
@@ -323,12 +323,21 @@ const DragNodeBehavior: BehaviorOption = {
   executeDragCommand() {
     const { nextId, parentId } = this.computePlacePosition();
     const { model, graph } = this;
-    graph.get("command").execute("drag-node", {
-      model,
+    const originalPosition =  {
+        nextId: this.originalPosition.nextId,
+        parentId: this.originalPosition.parentId
+    }
+    const nextPosition = {
       nextId,
-      parentId,
-      oldNextId: this.originalPosition.nextId,
-      oldParentId: this.originalPosition.parentId,
+      parentId
+    }
+    graph.executeBatch(() => {
+      graph.placeNode(model, originalPosition);
+      graph.get("command").execute("drag-node", {
+        model,
+        nextPosition,
+        originalPosition
+      });
     });
   },
 
@@ -337,7 +346,7 @@ const DragNodeBehavior: BehaviorOption = {
 
     const newPoint = {
       x,
-      y,
+      y
     };
 
     if (!this.delegateRect || this.delegateRect.destroyed) {
@@ -351,15 +360,15 @@ const DragNodeBehavior: BehaviorOption = {
           width: this.itemPosition.width,
           height: this.itemPosition.height,
           ...newPoint,
-          ...attrs,
+          ...attrs
         },
-        name: "rect-delegate-shape",
+        name: "rect-delegate-shape"
       });
       this.delegateRect.set("capture", false);
     } else {
       this.delegateRect.attr(newPoint);
     }
-  },
+  }
 };
 
 export default DragNodeBehavior;

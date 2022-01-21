@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
-import { ICommand, NodeType } from "./../types";
-import Graph from "../graph";
-import { getNextId, getParentId } from "../utils";
+import { NodeType, TransactionType } from "./../types";
+import { createTransaction, getNodeInfo } from "../utils";
+import BaseCommand from "./base";
 
 export interface TopicCommandParams {
   parentId: string | null;
@@ -10,65 +10,33 @@ export interface TopicCommandParams {
   nextId: string | null;
 }
 
-class TopicCommand implements ICommand<TopicCommandParams> {
-  private graph: Graph;
+class TopicCommand extends BaseCommand {
   name = "topic";
-
-  params = {
-    parentId: null,
-    id: null,
-    selectedId: null,
-    nextId: null,
-  };
-
   shortcuts = ["Enter"];
-
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
-
-  canUndo(): boolean {
-    return true;
-  }
-
-  undo(): void {
-    const { graph, params } = this;
-    const { id, selectedId } = params;
-    graph.removeChild(id);
-    graph.setSelectedItems([selectedId]);
-  }
 
   canExecute(): boolean {
     const { graph } = this;
-
-    const selectedNodes = graph.getSelectedNodes();
-    if (!selectedNodes.length) return false;
-    const selectedNode = selectedNodes[0];
-
-    return !graph.isRootNode(selectedNode.getID());
+    return this.target && !graph.isRootNode(this.target.getID());
   }
 
   init() {
-    const { graph } = this;
-    const selectedNode = graph.getSelectedNodes()[0];
-    this.params = {
-      parentId: getParentId(selectedNode),
-      nextId: getNextId(selectedNode),
-      selectedId: selectedNode.getID(),
+    const { nextId, parentId } = getNodeInfo(this.target);
+    const model = {
       id: v4(),
-    };
-  }
-
-  execute() {
-    const { graph, params } = this;
-    const { id, nextId, parentId } = params;
-    const newModel = {
-      id,
       label: "",
       type: "xmindNode" as NodeType,
-      children: [],
+      children: []
     };
-    graph.placeNode(newModel, { nextId, parentId });
+    this.transactions = [
+      [
+        createTransaction(TransactionType.ADD, {
+          model,
+          nextId,
+          parentId
+        })
+      ],
+      [createTransaction(TransactionType.REMOVE, { model })]
+    ];
   }
 }
 

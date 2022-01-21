@@ -3,13 +3,14 @@ import Graph from "../graph";
 import { EditorEvent, GraphCommonEvent, ItemState } from "../constants";
 import _ from "lodash";
 import { isFired } from "../utils";
+import BaseCommand from "./base";
+import Queue from './queue';
 
 class CommandManager {
   command: {
     [propName: string]: ICommand;
   };
-  commandQueue: ICommand[];
-  commandIndex: number;
+  queue: Queue<BaseCommand> = new Queue();
   private graph: Graph;
   private el: HTMLElement;
   private editorFocused = false;
@@ -17,13 +18,9 @@ class CommandManager {
   constructor(graph: Graph, commands?: Record<string, ICommand>) {
     this.graph = graph;
     this.command = commands || {};
-    this.commandQueue = [];
-    this.commandIndex = 0;
-
     this.bind();
   }
 
-  /** 注册命令 */
   register(command: ICommand) {
     this.command[command.name] = command;
   }
@@ -81,11 +78,11 @@ class CommandManager {
       return;
     }
 
-    command.init(params);
-
     if (command.shouldExecute && !command.shouldExecute()) {
       return;
     }
+
+    command.init(params);
 
     this.graph.emit(EditorEvent.onBeforeExecuteCommand, command);
 
@@ -97,15 +94,7 @@ class CommandManager {
     this.enable();
 
     if (command.canUndo()) {
-      const { commandQueue, commandIndex } = this;
-
-      commandQueue.splice(
-        commandIndex,
-        commandQueue.length - commandIndex,
-        command
-      );
-
-      this.commandIndex += 1;
+      this.queue.push(command);
     }
   }
 

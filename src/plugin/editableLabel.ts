@@ -231,8 +231,8 @@ export default class EditableLabel extends Base {
       label: this.originalLabel
     });
     command.execute("update", {
-      id: item.getID(),
       updateModel: {
+        id: item.getID(),
         label: text
       }
     });

@@ -24,7 +24,7 @@ export type TreeGraphData = ITreeGraphData & {
 
 export type NodeType = "rootNode" | "xmindNode";
 
-export interface ICommand {
+export interface ICommand<P = any> {
   /** 命令名称 */
   name: string;
   /** 是否可以执行 */
@@ -38,7 +38,7 @@ export interface ICommand {
   /** 撤销命令 */
   undo(): Transaction[];
   /** 初始化参数 */
-  init(): void;
+  init(params: P): void;
   /** 命令快捷键 */
   shortcuts: string[] | string[][];
   transactions: [Transaction[], Transaction[]];
@@ -61,19 +61,18 @@ export type Global = {
 };
 
 export enum TransactionType {
-  ADD,
-  UPDATE,
-  REMOVE
+  ADD = "add",
+  UPDATE = "update",
+  REMOVE = "remove"
 }
 
 export type Transaction = {
   command: TransactionType;
   payload: {
     model: TreeGraphData;
-    parentId?: string | null ;
-    nextId?: string | null ;
+    parentId?: string | null;
+    nextId?: string | null;
   };
 };
 
-export type TransactionPayload = Transaction['payload'];
-
+export type TransactionPayload = Transaction["payload"];

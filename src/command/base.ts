@@ -17,7 +17,7 @@ export default class BaseCommand implements ICommand {
     this.target = node;
   }
 
-  init() {}
+  init(params?: any) {}
 
   canUndo() {
     return true;
