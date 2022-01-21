@@ -4,7 +4,7 @@ import { BBox } from "@antv/g-base";
 import Graph from "../graph";
 import _ from "lodash";
 import { deepMix } from "@antv/util";
-import { getNextId, getParentId } from "../utils";
+import { getNextId, getParentId, getPrevId } from "../utils";
 
 type NodePosition = {
   width: number;
@@ -13,13 +13,15 @@ type NodePosition = {
   y: number;
   id: string;
   parentId: number;
+  prevId: string;
+  nextId: string;
   label: string;
 };
 
 const getPlaceholderModel = () => ({
   id: "dragPlaceholderNode",
   type: "dragPlaceholderNode",
-  label: "        "
+  label: "        ",
 });
 
 const compute = {
@@ -29,7 +31,7 @@ const compute = {
   ) => {
     return {
       x: point.x - offset.offsetX,
-      y: point.y - offset.offsetY
+      y: point.y - offset.offsetY,
     };
   },
   containerCenter: (graph: Graph, item: INode) => {
@@ -54,7 +56,7 @@ const compute = {
     let lastMin = Number.MAX_SAFE_INTEGER;
     const map = _.keyBy(list, "id");
 
-    list.forEach(item => {
+    list.forEach((item) => {
       if (x <= item.x + item.width) {
         return;
       }
@@ -71,21 +73,20 @@ const compute = {
     if (!closestParent) return { parent: null, sibling: null };
 
     const siblingList = list.filter(
-      item => item.x < x && item.x + item.width > x
+      (item) => +item.x - item.width / 2 < x && item.x + item.width / 2 > x
     );
 
     let closestNext = null,
       closestPrev = null,
       lastNextMin = Number.MAX_SAFE_INTEGER,
       lastPrevMin = lastNextMin;
-    siblingList.forEach(item => {
+    siblingList.forEach((item) => {
       let dis = y - item.y;
       // cursor under the item
       if (dis > 0) {
         if (dis >= lastPrevMin) return;
         lastPrevMin = dis;
         closestPrev = item;
-        // cursor above the item
       } else {
         dis = -dis;
         if (dis >= lastNextMin) return;
@@ -94,32 +95,29 @@ const compute = {
       }
     });
 
-    if (
-      lastPrevMin < lastNextMin &&
-      closestPrev &&
-      closestPrev.parentId !== closestParent.id
-    ) {
-      closestParent = map[closestPrev.parentId];
-      closestNext = null;
+    if (closestNext && (lastNextMin < lastPrevMin || !closestPrev)) {
+      closestPrev = map[closestNext.prevId] || null;
+      closestParent = map[closestNext.parentId];
     }
-    if (closestNext && closestNext.parentId !== closestParent.id) {
-      closestNext = null;
+
+    if (closestPrev && closestParent?.id !== closestPrev.parentId) {
+      closestParent = map[closestPrev.parentId];
     }
 
     if (maxThreshold) {
-      if (x - closestParent.x - closestParent.width > maxThreshold) {
+      if (x - (closestParent.x + closestParent.width / 2) > maxThreshold) {
         closestParent = null;
       }
-      if (closestNext && y - closestNext.y > maxThreshold) {
+      if (closestPrev && closestPrev.y - y > maxThreshold) {
         closestNext = null;
       }
     }
 
     return {
       parent: closestParent,
-      sibling: closestNext
+      sibling: closestPrev,
     };
-  }
+  },
 };
 
 const DragNodeBehavior: BehaviorOption = {
@@ -131,13 +129,13 @@ const DragNodeBehavior: BehaviorOption = {
       },
       shouldDragFrom() {
         return true;
-      }
+      },
     };
   },
 
   getEvents(): { [key in G6Event]?: string } {
     return {
-      "node:dragstart": "onDragStart"
+      "node:dragstart": "onDragStart",
     };
   },
 
@@ -156,7 +154,7 @@ const DragNodeBehavior: BehaviorOption = {
     this.onDragEnd = this.onDragEnd.bind(this);
 
     el.addEventListener("mousemove", this.onDragging, {
-      passive: false
+      passive: false,
     });
     el.addEventListener("mouseup", this.onDragEnd);
 
@@ -167,13 +165,13 @@ const DragNodeBehavior: BehaviorOption = {
     this.model = model;
     this.originalPosition = {
       parentId: getParentId(e.item),
-      nextId: getNextId(e.item)
+      prevId: getPrevId(e.item),
     };
 
     this.itemPosition = {
       offsetX: e.x - itemBBox.x,
       offsetY: e.y - itemBBox.y,
-      ..._.pick(itemBBox, ["width", "height"])
+      ..._.pick(itemBBox, ["width", "height"]),
     };
 
     this.placeholderModel = getPlaceholderModel();
@@ -182,37 +180,47 @@ const DragNodeBehavior: BehaviorOption = {
 
   cacheAllPoints() {
     this.nodePoints = [];
+    const graph = this.get("graph");
 
-    this.get("graph").findAll("node", node => {
+    graph.findAll("node", (node) => {
       const bBox = node.getContainer().getBBox();
       const matrix = node.getContainer().getMatrix();
       const model = node.getModel();
 
       if (model.id === this.model.id || model.id === this.placeholderModel.id)
         return false;
-      this.nodePoints.push({
+      const position = {
         // node width
         width: bBox.width,
         // node height
         height: bBox.height,
         // node left x
-        x: matrix[6],
+        x: matrix[6] + bBox.width / 2,
         // node top y
-        y: matrix[7],
+        y: matrix[7] + bBox.height / 2,
         // node id
         id: model.id,
         // node parent id
         parentId: getParentId(node),
         nextId: getNextId(node),
+        prevId: getPrevId(node),
         // node label
-        label: model.label
-      });
+        label: model.label,
+      };
+      const placeholderId = getPlaceholderModel().id;
+      if (position.nextId === placeholderId) {
+        position.nextId = getNextId(graph.findById(placeholderId));
+      }
+      if (position.prevId === placeholderId) {
+        position.prevId = getPrevId(graph.findById(placeholderId));
+      }
+      this.nodePoints.push(position);
       return false;
     });
   },
 
   onDragging: _.throttle(
-    function(e: MouseEvent) {
+    function (e: MouseEvent) {
       const graph: Graph = this.graph;
       if (!this.nodePoints) {
         this.cacheAllPoints();
@@ -260,32 +268,29 @@ const DragNodeBehavior: BehaviorOption = {
         return;
       }
 
-      this.cacheAllPoints();
-
       this.lastClosetItem = this.closestItem;
       this.placeChildren(this.placeholderModel);
+
+      this.cacheAllPoints();
     },
-    30,
+    50,
     {
       leading: true,
-      trailing: false
+      trailing: false,
     }
   ),
 
   computePlacePosition() {
     const shouldDragTo = this.get("shouldDragTo");
-    const { graph, closestItem, originalPosition } = this;
+    const { graph, closestItem } = this;
     const { parent, sibling } = closestItem;
 
     if (!parent || (parent && !shouldDragTo(graph.findById(parent.id)))) {
-      return {
-        nextId: originalPosition.nextId,
-        parentId: originalPosition.parentId
-      };
+      return this.originalPosition;
     } else {
       return {
         parentId: parent.id,
-        nextId: sibling?.id || null
+        prevId: sibling?.id || null,
       };
     }
   },
@@ -321,22 +326,18 @@ const DragNodeBehavior: BehaviorOption = {
   },
 
   executeDragCommand() {
-    const { nextId, parentId } = this.computePlacePosition();
-    const { model, graph } = this;
-    const originalPosition =  {
-        nextId: this.originalPosition.nextId,
-        parentId: this.originalPosition.parentId
-    }
+    const { prevId, parentId } = this.computePlacePosition();
+    const { model, graph, originalPosition } = this;
     const nextPosition = {
-      nextId,
-      parentId
-    }
+      prevId,
+      parentId,
+    };
     graph.executeBatch(() => {
       graph.placeNode(model, originalPosition);
       graph.get("command").execute("drag-node", {
         model,
         nextPosition,
-        originalPosition
+        originalPosition,
       });
     });
   },
@@ -346,7 +347,7 @@ const DragNodeBehavior: BehaviorOption = {
 
     const newPoint = {
       x,
-      y
+      y,
     };
 
     if (!this.delegateRect || this.delegateRect.destroyed) {
@@ -360,15 +361,15 @@ const DragNodeBehavior: BehaviorOption = {
           width: this.itemPosition.width,
           height: this.itemPosition.height,
           ...newPoint,
-          ...attrs
+          ...attrs,
         },
-        name: "rect-delegate-shape"
+        name: "rect-delegate-shape",
       });
       this.delegateRect.set("capture", false);
     } else {
       this.delegateRect.attr(newPoint);
     }
-  }
+  },
 };
 
 export default DragNodeBehavior;

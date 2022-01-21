@@ -7,8 +7,6 @@ import Queue from "./queue";
 class undoCommand extends BaseCommand {
   name = "undo";
 
-  params = {};
-
   private queue: Queue<BaseCommand>;
 
   shortcuts = [[CTRL_KEY, "z"]];
@@ -16,10 +14,10 @@ class undoCommand extends BaseCommand {
   constructor(graph: Graph, manager: CommandManager) {
     super(graph);
     this.queue = manager.queue;
-  };
+  }
 
   canExecute() {
-    return !!this.queue.current
+    return !!this.queue.current;
   }
 
   canUndo() {
@@ -27,7 +25,7 @@ class undoCommand extends BaseCommand {
   }
 
   execute() {
-    const transactions = this.queue.current.undo()
+    const transactions = this.queue.current.undo();
     this.queue.back();
     return transactions;
   }

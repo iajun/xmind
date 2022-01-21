@@ -3,7 +3,7 @@ import {
   EdgeConfig,
   IEdge,
   INode,
-  TreeGraphData as ITreeGraphData
+  TreeGraphData as ITreeGraphData,
 } from "@antv/g6";
 import { NodeConfig } from "./config";
 
@@ -12,7 +12,6 @@ export type NodeModel = NodeConfig | EdgeConfig | ComboConfig | TreeGraphData;
 export type Node = {
   id: string;
   label: string;
-  nextId: string | null;
   parentId: string | null;
   [key: string]: any;
 };
@@ -63,16 +62,23 @@ export type Global = {
 export enum TransactionType {
   ADD = "add",
   UPDATE = "update",
-  REMOVE = "remove"
+  REMOVE = "remove",
 }
 
 export type Transaction = {
   command: TransactionType;
   payload: {
     model: TreeGraphData;
-    parentId?: string | null;
-    nextId?: string | null;
+    pointer?: {
+      parentId?: string | null;
+      prevId?: string | null;
+    };
   };
 };
 
 export type TransactionPayload = Transaction["payload"];
+
+export type Pointer = {
+  parentId: string | null;
+  prevId: string | null;
+};

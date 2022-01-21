@@ -1,6 +1,6 @@
-import { ICommand, TreeGraphData } from "../types";
-import Graph from "../graph";
-import { getNextId, getParentId } from "../utils";
+import { TransactionType, TreeGraphData } from "../types";
+import { createTransaction, getNodeInfo } from "../utils";
+import BaseCommand from "./base";
 
 export interface RemoveCommandParams {
   id: string;
@@ -9,61 +9,30 @@ export interface RemoveCommandParams {
   model: TreeGraphData;
 }
 
-class RemoveCommand implements ICommand<RemoveCommandParams> {
-  private graph: Graph;
+class RemoveCommand extends BaseCommand {
   name = "remove";
-
-  params = {
-    id: "",
-    parentId: "",
-    nextId: "",
-    model: {} as TreeGraphData,
-  };
 
   shortcuts = ["Backspace"];
 
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
-
-  canUndo(): boolean {
-    return true;
-  }
-
-  undo(): void {
-    const { graph, params } = this;
-    const { model, nextId, parentId, id } = params;
-    graph.placeNode(model, { nextId, parentId });
-    graph.setSelectedItems([id]);
-  }
-
   canExecute(): boolean {
-    const { graph } = this;
-
-    const selectedNodes = graph.getSelectedNodes();
-    if (selectedNodes.length !== 1) return false;
-    const selectedNode = selectedNodes[0];
-
-    return !graph.isRootNode(selectedNode.getID());
+    return this.target && !this.graph.isRootNode(this.target.getID());
   }
 
   init() {
-    const { graph } = this;
-    const selectedNodes = graph.getSelectedNodes();
-    this.params = {
-      model: selectedNodes[0].getModel() as TreeGraphData,
-      id: selectedNodes[0].getID(),
-      nextId: getNextId(selectedNodes[0]),
-      parentId: getParentId(selectedNodes[0]),
-    };
-  }
-
-  execute() {
-    const { graph, params } = this;
-    const { id, nextId } = params;
-    graph.removeChild(id);
-    const focusId = nextId;
-    focusId && graph.setSelectedItems([focusId]);
+    const { model, pointer } = getNodeInfo(this.target);
+    this.transactions = [
+      [
+        createTransaction(TransactionType.REMOVE, {
+          model,
+        }),
+      ],
+      [
+        createTransaction(TransactionType.ADD, {
+          model,
+          pointer,
+        }),
+      ],
+    ];
   }
 }
 

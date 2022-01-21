@@ -5,7 +5,7 @@ import G6, {
   IGraph,
   INode,
   Item,
-  NodeConfig
+  NodeConfig,
 } from "@antv/g6";
 import _ from "lodash";
 import { EditorEvent } from "./constants";
@@ -13,7 +13,7 @@ import {
   Transaction,
   TransactionPayload,
   TransactionType,
-  TreeGraphData
+  TreeGraphData,
 } from "./types";
 const { Util } = G6;
 
@@ -28,7 +28,7 @@ export const fittingString = (
   let currentWidth = 0;
   let res = "";
   let tmp = "";
-  text.split("").forEach(letter => {
+  text.split("").forEach((letter) => {
     if (isTextWrap(letter)) {
       res += `${tmp}\n`;
       currentWidth = 0;
@@ -57,7 +57,7 @@ export const fittingString = (
 
 export const fittingLabelWidth = (label: string, fontSize: number) => {
   const maxLabelWidth = Math.max(
-    ...label.split("\n").map(line => Util.getTextSize(line, fontSize)[0])
+    ...label.split("\n").map((line) => Util.getTextSize(line, fontSize)[0])
   );
   return maxLabelWidth;
 };
@@ -118,7 +118,7 @@ export const isFired = (shortcuts: string[] | string[][], e) => {
       return _.difference(
         ["metaKey", "shiftKey", "ctrlKey", "altKey"],
         shortcut
-      ).every(item => !e[item]);
+      ).every((item) => !e[item]);
     }
     return false;
   });
@@ -162,7 +162,7 @@ export const Clipboard = {
     }
     data[Clipboard.key] = true;
     return localStorage.setItem(Clipboard.key, JSON.stringify(data));
-  }
+  },
 };
 
 export function getParentId(node: Item): string | null {
@@ -171,11 +171,17 @@ export function getParentId(node: Item): string | null {
   return parent.get("id") || null;
 }
 
+export function getFirstChildId(node: Item): string | null {
+  const children = node.get("children") || [];
+  if (!children.length) return null;
+  return children[0].getID();
+}
+
 export function getNextId(node: Item): string | null {
   const parent = node.get("parent");
   if (!parent) return null;
   const children = parent.getModel().children || [];
-  const idx = children.findIndex(item => item.id === node.getID());
+  const idx = children.findIndex((item) => item.id === node.getID());
   if (~idx) {
     return children[idx + 1]?.id || null;
   }
@@ -186,7 +192,7 @@ export function getPrevId(node: Item): string | null {
   const parent = node.get("parent");
   if (!parent) return null;
   const children = parent.getModel().children || [];
-  const idx = children.findIndex(item => item.id === node.getID());
+  const idx = children.findIndex((item) => item.id === node.getID());
   if (~idx) {
     return children[idx - 1]?.id || null;
   }
@@ -213,8 +219,10 @@ export function setBounds(clientX: number, clientY: number) {
 export function getNodeInfo(node: INode) {
   return {
     model: node.getModel() as TreeGraphData,
-    parentId: getParentId(node),
-    nextId: getNextId(node)
+    pointer: {
+      parentId: getParentId(node),
+      prevId: getPrevId(node),
+    },
   };
 }
 
@@ -224,7 +232,7 @@ export function createTransaction(
 ): Transaction {
   return {
     command: type,
-    payload
+    payload,
   };
 }
 
@@ -232,6 +240,6 @@ export function createClipboardItem(node: INode) {
   const model = node.getModel() as TreeGraphData;
   return {
     id: model.id,
-    model
+    model,
   };
 }

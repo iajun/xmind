@@ -2,13 +2,8 @@ import { v4 } from "uuid";
 import { NodeType, TransactionType } from "./../types";
 import { createTransaction } from "../utils";
 import BaseCommand from "./base";
-
-export interface TopicCommandParams {
-  parentId: string | null;
-  id: string | null;
-  selectedId: string | null;
-  nextId: string | null;
-}
+import { last } from "lodash";
+import { INode } from "@antv/g6";
 
 class SubTopicCommand extends BaseCommand {
   name = "subTopic";
@@ -19,17 +14,21 @@ class SubTopicCommand extends BaseCommand {
       id: v4(),
       label: "",
       type: "xmindNode" as NodeType,
-      children: []
+      children: [],
     };
+    const lastChild = last(this.target.get("children")) as INode | undefined;
+
     this.transactions = [
       [
         createTransaction(TransactionType.ADD, {
           model,
-          nextId: null,
-          parentId: this.target.getID()
-        })
+          pointer: {
+            prevId: lastChild ? lastChild.getID() : null,
+            parentId: this.target.getID(),
+          },
+        }),
       ],
-      [createTransaction(TransactionType.REMOVE, { model })]
+      [createTransaction(TransactionType.REMOVE, { model })],
     ];
   }
 }

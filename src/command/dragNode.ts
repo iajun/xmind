@@ -1,17 +1,12 @@
-import { TransactionType, TreeGraphData } from "../types";
+import { Pointer, TransactionType, TreeGraphData } from "../types";
 import _ from "lodash";
-import { cloneTree, createTransaction } from "../utils";
+import { createTransaction } from "../utils";
 import BaseCommand from "./base";
-
-export type Position = {
-  parentId: string | null;
-  nextId: string | null;
-}
 
 export interface DragNodeCommandParams {
   model: TreeGraphData;
-  originalPosition: Position,
-  nextPosition: Position
+  originalPosition: Pointer;
+  nextPosition: Pointer;
 }
 
 class DragNodeCommand extends BaseCommand {
@@ -28,20 +23,20 @@ class DragNodeCommand extends BaseCommand {
     let nextModel = model;
     const addPayload = {
       model: nextModel,
-      ...nextPosition
+      pointer: nextPosition,
     };
     this.transactions = [
       [
         createTransaction(TransactionType.REMOVE, { model }),
-        createTransaction(TransactionType.ADD, addPayload)
+        createTransaction(TransactionType.ADD, addPayload),
       ],
       [
         createTransaction(TransactionType.REMOVE, { model }),
         createTransaction(TransactionType.ADD, {
           model: nextModel,
-          ...originalPosition
-        })
-      ]
+          pointer: originalPosition,
+        }),
+      ],
     ];
   }
 }

@@ -1,4 +1,4 @@
-import { TreeGraphData, TransactionType } from "../types";
+import { TransactionType } from "../types";
 import {
   Clipboard,
   createClipboardItem,
@@ -7,13 +7,6 @@ import {
   getNodeInfo
 } from "../utils";
 import BaseCommand from "./base";
-
-export interface CutCommandParams {
-  id: string;
-  parentId: string;
-  nextId: string | null;
-  model: TreeGraphData;
-}
 
 class CutCommand extends BaseCommand {
   name = "cut";

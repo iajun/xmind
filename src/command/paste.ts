@@ -1,6 +1,12 @@
 import { TransactionType, TreeGraphData } from "../types";
 import _ from "lodash";
-import { cloneTree, CTRL_KEY, Clipboard, createTransaction } from "../utils";
+import {
+  cloneTree,
+  CTRL_KEY,
+  Clipboard,
+  createTransaction,
+  getPrevId,
+} from "../utils";
 import BaseCommand from "./base";
 
 class PasteCommand extends BaseCommand {
@@ -24,11 +30,13 @@ class PasteCommand extends BaseCommand {
       [
         createTransaction(TransactionType.ADD, {
           model,
-          nextId: null,
-          parentId: this.target.getID()
-        })
+          pointer: {
+            prevId: getPrevId(this.target),
+            parentId: this.target.getID(),
+          },
+        }),
       ],
-      [createTransaction(TransactionType.REMOVE, { model })]
+      [createTransaction(TransactionType.REMOVE, { model })],
     ];
   }
 }

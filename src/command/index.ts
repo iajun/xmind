@@ -16,9 +16,7 @@ import MoveLeftCommand from "./moveLeft";
 import MoveRightCommand from "./moveRight";
 import DragCommand from "./dragNode";
 import Graph from "../graph";
-import { ICommand } from "../types";
 import BaseCommand from "./base";
-import Queue from "./queue";
 
 const commands = {
   FoldCommand,
@@ -41,14 +39,14 @@ export type CommandOption = {
 };
 
 function createCommandManager(graph: Graph, commandOptions?: CommandOption[]) {
-  const manager = new CommandManager(graph);
+  const manager = new CommandManager(graph, {}, commandOptions);
 
   let commands: BaseCommand[] = [
     new FoldCommand(graph),
     new UnFoldCommand(graph),
     new UpdateCommand(graph),
-    new UndoCommand(graph, manager.queue),
-    new RedoCommand(graph, manager.queue),
+    new (UndoCommand as any)(graph, manager.queue),
+    new (RedoCommand as any)(graph, manager.queue),
     new CopyCommand(graph),
     new PasteCommand(graph),
     new CutCommand(graph),
@@ -75,7 +73,6 @@ function createCommandManager(graph: Graph, commandOptions?: CommandOption[]) {
         resolvedCommands.push(command);
       } else {
         if (option.enabled === false) return;
-        (command as any).shouldExecute = option.shouldExecute.bind(command);
         resolvedCommands.push(command);
       }
     });

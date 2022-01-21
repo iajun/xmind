@@ -6,7 +6,7 @@ export default class BaseCommand implements ICommand {
   protected graph: Graph;
   protected target: INode;
 
-  name = '_base';
+  name = "_base";
   shortcuts = [];
 
   transactions: [Transaction[], Transaction[]] = [[], []];
@@ -17,7 +17,7 @@ export default class BaseCommand implements ICommand {
     this.target = node;
   }
 
-  init(params?: any) {}
+  init(_params?: any) {}
 
   canUndo() {
     return true;

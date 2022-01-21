@@ -9,17 +9,15 @@ class redoCommand extends BaseCommand {
 
   private queue: Queue<BaseCommand>;
 
-  shortcuts= [
-    [CTRL_KEY, 'shiftKey', 'z'],
-  ]
+  shortcuts = [[CTRL_KEY, "shiftKey", "z"]];
 
   constructor(graph: Graph, manager: CommandManager) {
     super(graph);
     this.queue = manager.queue;
-  };
+  }
 
   canExecute() {
-    return this.queue.canFore()
+    return this.queue.canFore();
   }
 
   canUndo() {
@@ -28,7 +26,7 @@ class redoCommand extends BaseCommand {
 
   execute() {
     this.queue.fore();
-    return this.queue.current.execute()
+    return this.queue.current.execute();
   }
 }
 

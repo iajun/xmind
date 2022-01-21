@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 import { NodeType, TransactionType } from "./../types";
-import { createTransaction, getNodeInfo } from "../utils";
+import { createTransaction, getParentId } from "../utils";
 import BaseCommand from "./base";
 
 export interface TopicCommandParams {
@@ -20,22 +20,23 @@ class TopicCommand extends BaseCommand {
   }
 
   init() {
-    const { nextId, parentId } = getNodeInfo(this.target);
     const model = {
       id: v4(),
       label: "",
       type: "xmindNode" as NodeType,
-      children: []
+      children: [],
     };
     this.transactions = [
       [
         createTransaction(TransactionType.ADD, {
           model,
-          nextId,
-          parentId
-        })
+          pointer: {
+            parentId: getParentId(this.target),
+            prevId: this.target.getID(),
+          },
+        }),
       ],
-      [createTransaction(TransactionType.REMOVE, { model })]
+      [createTransaction(TransactionType.REMOVE, { model })],
     ];
   }
 }

@@ -1,60 +1,23 @@
-import { ICommand } from "../types";
-import Graph from "../graph";
+import { getFirstChildId } from "../utils";
+import BaseCommand from "./base";
 
-export interface MoveRightCommandParams {
-    id: string,
-    targetId: string 
-}
-
-class MoveRightCommand implements ICommand<MoveRightCommandParams> {
-  private graph: Graph;
-
+class MoveRightCommand extends BaseCommand {
   name = "move-right";
-
-  params = {
-    id: "",
-    targetId: ''
-  };
-
-  shortcuts = [
-    ["ArrowRight"],
-  ];
-
-  constructor(graph: Graph) {
-    this.graph = graph;
-  }
+  shortcuts = [["ArrowRight"]];
 
   canUndo(): boolean {
     return false;
   }
 
-  undo(): void {
-  }
-
   canExecute(): boolean {
-    const selectedNodes = this.graph.getSelectedNodes();
-
-    if (selectedNodes.length !== 1) return false;
-    const children = selectedNodes[0].getModel().children as any[];
-    if (!children || !children.length) return false;
-
-    return true;
-  }
-
-  init() {
-    const { graph } = this;
-    const selectedNodes = graph.getSelectedNodes();
-
-    const id = selectedNodes[0].getID();
-    this.params = {
-      id,
-      targetId: selectedNodes[0].getModel().children[0].id
-    };
+    return !!(this.target && getFirstChildId(this.target));
   }
 
   execute() {
-    const { targetId } = this.params;
-    this.graph.setSelectedItems([targetId])
+    const { graph } = this;
+    graph.setSelectedItems([getFirstChildId(this.target)]);
+
+    return [];
   }
 }
 

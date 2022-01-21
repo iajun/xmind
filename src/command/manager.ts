@@ -4,7 +4,8 @@ import { EditorEvent, GraphCommonEvent, ItemState } from "../constants";
 import _ from "lodash";
 import { isFired } from "../utils";
 import BaseCommand from "./base";
-import Queue from './queue';
+import Queue from "./queue";
+import { CommandOption } from ".";
 
 class CommandManager {
   command: {
@@ -14,10 +15,19 @@ class CommandManager {
   private graph: Graph;
   private el: HTMLElement;
   private editorFocused = false;
+  private options: Record<string, CommandOption> = {};
 
-  constructor(graph: Graph, commands?: Record<string, ICommand>) {
+  constructor(
+    graph: Graph,
+    commands: Record<string, ICommand> = {},
+    commandOptions: CommandOption[] = []
+  ) {
     this.graph = graph;
     this.command = commands || {};
+    this.options = commandOptions.reduce((acc, item) => {
+      acc[item.name] = item;
+      return acc;
+    }, {});
     this.bind();
   }
 
@@ -41,18 +51,18 @@ class CommandManager {
     const graph = this.graph;
 
     graph.executeBatch(() => {
-      transactions.forEach(transaction => {
+      transactions.forEach((transaction) => {
         const {
           command,
-          payload: { model, parentId, nextId }
+          payload: { model, pointer },
         } = transaction;
         switch (command) {
           case TransactionType.REMOVE:
             graph.removeChild(model.id);
             break;
           case TransactionType.ADD:
-            graph.placeNode(model, { parentId, nextId });
-            graph.selectNode(model.id)
+            graph.placeNode(model, pointer);
+            graph.selectNode(model.id);
             break;
           case TransactionType.UPDATE:
             graph.updateItem(model.id, model);
@@ -78,9 +88,10 @@ class CommandManager {
       return;
     }
 
-    if (command.shouldExecute && !command.shouldExecute()) {
-      return;
+    if (this.options[name] && this.options[name].shouldExecute) {
+      command.shouldExecute = this.options[name].shouldExecute.bind(command);
     }
+    if (!command.shouldExecute()) return;
 
     command.init(params);
 
@@ -107,7 +118,7 @@ class CommandManager {
   }
 
   private mousedownListener(e: MouseEvent) {
-    let parentNode = e.target.parentNode;
+    let parentNode = (e.target as any).parentNode;
     while (parentNode && parentNode.nodeName !== "BODY") {
       if (parentNode === this.container) {
         this.editorFocused = true;
@@ -131,12 +142,12 @@ class CommandManager {
       );
     });
 
-    this.graph.on(GraphCommonEvent.onKeyDown, e => {
+    this.graph.on(GraphCommonEvent.onKeyDown, (e) => {
       if (!this.shouldTriggerShortcut()) return;
       // editing
       if (this.graph.findAllByState("node", ItemState.Editing).length) return;
 
-      Object.values(this.command).some(command => {
+      Object.values(this.command).some((command) => {
         const { name, shortcuts } = command;
 
         if (isFired(shortcuts, e)) {
