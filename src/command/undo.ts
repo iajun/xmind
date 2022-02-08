@@ -1,7 +1,5 @@
-import Graph from "../graph";
 import { CTRL_KEY } from "../utils";
 import BaseCommand from "./base";
-import CommandManager from "./manager";
 import Queue from "./queue";
 
 class undoCommand extends BaseCommand {
@@ -11,9 +9,8 @@ class undoCommand extends BaseCommand {
 
   shortcuts = [[CTRL_KEY, "z"]];
 
-  constructor(graph: Graph, manager: CommandManager) {
-    super(graph);
-    this.queue = manager.queue;
+  init(queue: Queue<BaseCommand>) {
+    this.queue = queue;
   }
 
   canExecute() {

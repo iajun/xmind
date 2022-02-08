@@ -93,7 +93,11 @@ class CommandManager {
     }
     if (!command.shouldExecute()) return;
 
-    command.init(params);
+    if (['undo', 'redo'].includes(name)) {
+      command.init(this.queue);
+    } else {
+      command.init(params);
+    }
 
     this.graph.emit(EditorEvent.onBeforeExecuteCommand, command);
 
