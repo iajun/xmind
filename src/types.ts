@@ -4,10 +4,10 @@ import {
   IEdge,
   INode,
   TreeGraphData as ITreeGraphData,
+  ModelConfig as IModelConfig
 } from "@antv/g6";
-import { NodeConfig } from "./config";
 
-export type NodeModel = NodeConfig | EdgeConfig | ComboConfig | TreeGraphData;
+export type NodeModel = ModelConfig | EdgeConfig | ComboConfig | TreeGraphData;
 
 export type Node = {
   id: string;
@@ -47,18 +47,6 @@ export type ItemType = "node" | "edge";
 
 export type Item = INode | IEdge;
 
-export type Global = {
-  stroke: string;
-  lineWidth: number;
-  icon: {
-    fontSize: number;
-    fontFamily: string;
-    gap: number;
-  };
-  registeredNodes: Record<string, NodeConfig>;
-  placeholder: (model: any) => string;
-};
-
 export enum TransactionType {
   ADD = "add",
   UPDATE = "update",
@@ -82,3 +70,8 @@ export type Pointer = {
   parentId: string | null;
   prevId: string | null;
 };
+
+export type ModelConfig = IModelConfig & {
+  leftIcons?: string[];
+  rightIcons?: string[];
+}

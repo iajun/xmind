@@ -5,8 +5,8 @@ const leaf1 = {
   type: "xmindNode",
   label: "leaf1",
   children: [
-    { id: "7", label: "don't wanna", type: "xmindNode" },
-    { id: "8", label: "system is great", type: "xmindNode" },
+    { id: "7", label: `edit draft, choose "Non- TO" chute, can edit Chute Direction, Parcel Sorting with multi receiver`, type: "xmindNode" },
+    { id: "8", label: `edit draft, upload file with "Non-TO" chute, can edit Chute Direction, Parcel Sorting with multi receiver`, type: "xmindNode" },
   ],
 };
 
@@ -23,7 +23,7 @@ const leaf2 = {
 const data = {
   id: "1",
   type: "rootNode",
-  label: "root",
+  label: `root edit draft, choose "Non- TO" chute, can edit Chute Direction, Parcel Sorting with multi receiver`,
   children: [
     leaf1,
     leaf2,

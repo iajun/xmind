@@ -1,13 +1,11 @@
-import { IGroup, Util, ModelConfig } from "@antv/g6";
+import { IGroup, Util } from "@antv/g6";
 import _ from "lodash";
-import GlobalConfig, { NodeConfig } from "../config";
+import C from "../config";
 import { NodeName } from "../constants";
-import {
-  fittingLabelHeight,
-  fittingLabelWidth,
-  fittingString,
-  getLabelByModel,
-} from "../utils";
+import { ModelConfig } from "../types";
+import { getLabelByModel } from "../utils";
+import getTextRenderer from "./text";
+import { NodeConfig } from './types'
 
 export const drawFoldButton = (group: IGroup) => {
   group.addShape("circle", {
@@ -16,7 +14,7 @@ export const drawFoldButton = (group: IGroup) => {
       y: 0,
       r: 6,
       fill: "#fff",
-      stroke: GlobalConfig.global.stroke,
+      stroke: C.edge.stroke,
       lineWidth: 1,
       cursor: "pointer",
     },
@@ -30,7 +28,7 @@ export const drawUnfoldButton = (group: IGroup, count: number) => {
       y: 0,
       r: 6,
       fill: "#fff",
-      stroke: GlobalConfig.global.stroke,
+      stroke: C.edge.stroke,
       lineWidth: 1,
       cursor: "pointer",
     },
@@ -49,54 +47,31 @@ export const drawUnfoldButton = (group: IGroup, count: number) => {
   });
 };
 
-const getIconWidth = (count) => {
-  const { fontSize, gap } = GlobalConfig.global.icon;
+const getIconWidth = (count: number) => {
+  const { fontSize, gap } = C.icon;
   return count * (fontSize + gap);
 };
 
-export const getSizeByConfig = (config, cfg) => {
+export const getSizeByConfig = (config: NodeConfig, cfg: ModelConfig) => {
   const {
-    labelStyle: { lineHeight, fontSize, maxWidth },
+    labelStyle,
     padding,
   } = config;
 
   const formattedPadding = Util.formatPadding(padding);
 
-  const text = getLabelByModel(cfg) || GlobalConfig.global.placeholder(cfg);
-  const label = fittingString(text, maxWidth, fontSize);
+  const text = getLabelByModel(cfg) || C.textPlaceholder?.(cfg) || '';
 
-  let labelWidth = fittingLabelWidth(label, fontSize);
-  labelWidth = labelWidth + fontSize > maxWidth ? maxWidth : labelWidth;
-  const labelHeight = fittingLabelHeight(label, lineHeight);
-
-  let descHeight = 0,
-    descWidth = 0;
-  const desc = cfg.description as string;
-  let description = "";
-  if (desc) {
-    const formattedPaddingDesc = Util.formatPadding(
-      GlobalConfig.nodeDescription.padding
-    );
-    description = fittingString(
-      desc,
-      maxWidth - formattedPaddingDesc[3],
-      GlobalConfig.nodeDescription.labelStyle.fontSize
-    );
-    descWidth = fittingLabelWidth(
-      description,
-      GlobalConfig.nodeDescription.labelStyle.fontSize
-    );
-
-    descHeight = fittingLabelHeight(
-      description,
-      GlobalConfig.nodeDescription.labelStyle.lineHeight
-    );
-  }
+  const {
+    width: labelWidth,
+    height: labelHeight,
+    text: label
+  } = getTextRenderer(labelStyle).render(text)
 
   const leftIconWidth = getIconWidth(cfg.leftIcons?.length || 0);
   const rightIconWidth = getIconWidth(cfg.rightIcons?.length || 0);
-  const textWidth = Math.max(labelWidth, descWidth);
-  const textHeight = labelHeight + descHeight;
+  const textWidth = labelWidth;
+  const textHeight = labelHeight;
 
   const width =
     textWidth +
@@ -108,7 +83,6 @@ export const getSizeByConfig = (config, cfg) => {
 
   return {
     label,
-    desc: description,
     width,
     height,
     leftIconWidth,
@@ -117,8 +91,6 @@ export const getSizeByConfig = (config, cfg) => {
     textHeight,
     labelWidth,
     labelHeight,
-    descWidth,
-    descHeight,
   };
 };
 
@@ -137,16 +109,13 @@ export const drawNode = (
     leftIconWidth,
     labelWidth,
     labelHeight,
-    descHeight,
-    descWidth,
-    desc,
     label,
   } = getSizeByConfig(options, cfg);
   const {
     leftIcons = [],
     rightIcons = [],
   }: { leftIcons: any[]; rightIcons: any[] } = cfg as any;
-  const globalIconConfig = GlobalConfig.global.icon;
+  const globalIconConfig = C.icon;
 
   // outer wrapper;
   const keyShape = group.addShape("rect", {
@@ -225,9 +194,9 @@ export const drawNode = (
       y: formattedPadding[0] + (lineHeight - fontSize) / 2,
       textBaseline: "top",
       textAlign: "left",
-      fontSize,
-      fontFamily: "PingFang SC",
-      fill: label === GlobalConfig.global.placeholder(cfg) ? '#bbb' : "#333",
+      fontSize: labelStyle.fontSize,
+      fontFamily: labelStyle.fontFamily,
+      fill: "#333",
       text: label,
       lineHeight,
       ...labelStyle,
@@ -235,39 +204,6 @@ export const drawNode = (
     },
     zIndex: 3,
   });
-
-  // description
-  if (desc) {
-    const descriptionPadding = Util.formatPadding(
-      GlobalConfig.nodeDescription.padding
-    );
-
-    group.addShape("path", {
-      zIndex: 3,
-      attrs: {
-        stroke: GlobalConfig.global.stroke,
-        lineWidth: GlobalConfig.global.lineWidth,
-        path: [
-          ["M", baseLeft, labelHeight + descriptionPadding[0]],
-          ["V", labelHeight + descHeight],
-        ],
-      },
-    });
-
-    group.addShape("text", {
-      zIndex: 3,
-      name: NodeName.BaseNodeDesc,
-      attrs: {
-        x: baseLeft + descriptionPadding[3],
-        y: labelHeight + formattedPadding[2],
-        width: descWidth,
-        height: descHeight,
-        text: desc,
-        textBaseline: "top",
-        ...GlobalConfig.nodeDescription.labelStyle,
-      },
-    });
-  }
 
   baseLeft += textWidth;
 

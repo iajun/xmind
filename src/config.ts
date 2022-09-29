@@ -1,92 +1,98 @@
-import { ModelConfig, ShapeStyle } from "@antv/g6";
 import _ from "lodash";
 import { ItemState } from "./constants";
-import { Global } from "./types";
+import { NodeConfig } from "./shape/types";
+import { ModelConfig } from "./types";
 
 export const PLACE_HOLDER = 'please typing...';
 
-export type NodeConfig = ModelConfig & {
-  labelStyle?: ShapeStyle;
-  wrapperStyle?: ShapeStyle;
-  padding?: number | number[];
-};
+export type MindmapConfig = {
+  textPlaceholder?: (config: ModelConfig) => string;
+  icon: {
+    fontSize: number;
+    fontFamily: string;
+    gap: number;
+  },
+  edge: {
+    stroke: string;
+    lineWidth: number;
+  },
+  node: Record<string, NodeConfig>
+}
 
-const global: Global = {
-  stroke: "#959EA6",
-  lineWidth: 2,
+const config: MindmapConfig = {
   icon: {
     fontSize: 20,
     fontFamily: "iconfont",
     gap: 6,
   },
-  registeredNodes: {},
-  placeholder: () => PLACE_HOLDER,
-};
-
-export function setGlobal(options: Partial<Global>) {
-  _.merge(global, options);
-}
-
-export default {
-  global,
-  rootNode: {
-    padding: [10, 20],
-    labelStyle: {
-      fontSize: 16,
-      maxWidth: 300,
-      lineHeight: 18,
-      fill: "#fff",
-    },
-    wrapperStyle: {
-      fill: "#587EF7",
-      lineWidth: 0,
-    },
-    stateStyles: {
-      [ItemState.Selected]: {
-        lineWidth: 2,
-        stroke: "#888",
+  edge: {
+    lineWidth: 1,
+    stroke: "#959EA6",
+  },
+  node: {
+    rootNode: {
+      padding: [10, 20],
+      labelStyle: {
+        fontSize: 16,
+        fontFamily: "PingFang SC",
+        maxWidth: 300,
+        lineHeight: 24,
+        fill: "#fff",
+      },
+      shapeType: 'rect',
+      wrapperStyle: {
+        fill: "#587EF7",
+        lineWidth: 0,
+      },
+      stateStyles: {
+        [ItemState.Selected]: {
+          lineWidth: 2,
+          fill: "#587EF7",
+          stroke: "#888",
+        },
       },
     },
-  } as NodeConfig,
-  xmindNode: {
-    padding: [6, 10],
-    wrapperStyle: {
-      fill: "#fff",
-      lineWidth: 0,
-    },
-    stateStyles: {
-      [ItemState.Selected]: {
-        stroke: "#096DD9",
-        lineWidth: 1,
-        fill: "#E2F0FE",
+    xmindNode: {
+      padding: [6, 10],
+      shapeType: 'line',
+      wrapperStyle: {
+        fill: "#fff",
+        lineWidth: 0,
+      },
+      stateStyles: {
+        [ItemState.Selected]: {
+          stroke: "#096DD9",
+          lineWidth: 1,
+          fill: "#E2F0FE",
+        },
+      },
+      labelStyle: {
+        fontSize: 14,
+        fontFamily: "PingFang SC",
+        maxWidth: 500,
+        lineHeight: 22,
+        lineWidht: 100,
+        fill: '#333'
       },
     },
-    labelStyle: {
-      fontSize: 14,
-      maxWidth: 500,
-      lineHeight: 20,
-      textColor: "#333",
-    },
-  } as NodeConfig,
-  placeholderNode: {
-    labelStyle: {
-      fontSize: 14,
-      lineHeight: 20,
-      fill: "#fff",
-    },
-    wrapperStyle: {
-      fill: "#587EF7",
-      lineWidth: 0,
-    },
-    padding: [10, 20],
-  } as NodeConfig,
-  nodeDescription: {
-    padding: [6, 10],
-    labelStyle: {
-      fill: "#666",
-      fontSize: 12,
-      lineHeight: 16,
-    },
-    wrapperStyle: {},
+    dragPlaceholderNode: {
+      shapeType: 'rect',
+      labelStyle: {
+        font: '14px "PingFang SC"',
+        maxWidth: 500,
+        fontSize: 14,
+        lineHeight: 20,
+        fill: "#fff",
+      },
+      wrapperStyle: {
+        fill: "#587EF7",
+        lineWidth: 0,
+      },
+      padding: [10, 20],
+    }
   },
 };
+
+export default config;
+
+export const getNodeConfig = (type: string) => config.node[type]

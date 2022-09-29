@@ -9,16 +9,17 @@ import { modifyCSS, createDom } from "@antv/dom-util";
 import { Item } from "@antv/g6-core";
 import Base from "@antv/g6-plugin/lib/base";
 import {
-  fittingLabelWidth,
   getLabelByModel,
+  getNodeLabelStyle,
   isFired,
   isLabelEqual,
   setBounds
 } from "../utils";
-import config from "../config";
+import C from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
 import Quill from "./quill";
+import getTextRenderer from "../shape/text";
 
 export type EditableLabelConfig = {
   shortcuts?: string[] | string[][];
@@ -92,7 +93,7 @@ export default class EditableLabel extends Base {
     });
 
     modifyCSS(this.wrapperEl, {
-      visibility: "hidden"
+      visibility: "hidden",
     });
 
     this.initRichTextEditor();
@@ -105,7 +106,6 @@ export default class EditableLabel extends Base {
       `<div id="mindmap-quill" class=${className || "g6-editable-label"}></div>`
     );
     this.wrapperEl.appendChild(this.editorEl);
-    const { maxWidth } = config.xmindNode.labelStyle;
     this.editor = new Quill(this.editorEl, {
       modules: {
         toolbar: [],
@@ -113,7 +113,7 @@ export default class EditableLabel extends Base {
           bindings: {
             handleEnter: {
               key: "Enter",
-              handler: function() {}
+              handler: function() { }
             },
             handleLinebreak: {
               key: "Enter",
@@ -131,7 +131,20 @@ export default class EditableLabel extends Base {
     this.editor.on("text-change", () => {
       this.adjustGraphSize();
     });
-    this.editor.root.style.cssText = `max-width: ${maxWidth}px; width: 100%`;
+  }
+
+  private showEditor() {
+    if (!this.item) return;
+    const nodeConfig = C.node[this.item.getModel().type?.toString() || '']
+    if (!nodeConfig) return;
+    const { labelStyle } = nodeConfig
+    const { maxWidth } = labelStyle
+    const labelShape = this.getLabelShape(this.item);
+    const keyShape = this.item.getKeyShape();
+    modifyCSS(this.wrapperEl, {
+      background: keyShape.attr('fill')
+    });
+    this.editor.root.style.cssText = `max-width: ${maxWidth}px; width: 100%; color: ${labelShape.attr('fill')};`;
   }
 
   private unbindAllListeners() {
@@ -170,14 +183,11 @@ export default class EditableLabel extends Base {
     item.update({
       label: text
     });
-    const placeholderWidth = fittingLabelWidth(
-      config.global.placeholder(item.getModel()),
-      config.xmindNode.labelStyle.fontSize
-    );
-    const textWidth = fittingLabelWidth(
-      text,
-      config.xmindNode.labelStyle.fontSize
-    );
+    const model = item.getModel();
+    const nodeLabelConfig = getNodeLabelStyle(model)
+    if (!nodeLabelConfig) return;
+    const { width: placeholderWidth } = getTextRenderer(nodeLabelConfig).render(C.textPlaceholder?.(model) || '');
+    const { width: textWidth } = getTextRenderer(nodeLabelConfig).render(text);
     if (textWidth > placeholderWidth) {
       this.editor.root.style.width = "auto";
     } else {
@@ -208,7 +218,7 @@ export default class EditableLabel extends Base {
       matrix[1],
       matrix[3],
       matrix[4],
-      containerPoint.x, 
+      containerPoint.x,
       containerPoint.y + 2
     ].join();
 
@@ -217,7 +227,7 @@ export default class EditableLabel extends Base {
       font,
       transform: `matrix(${matrixString})`,
       lineHeight: `${lineHeight}px`,
-      padding: `${labelBBox.y / 2}px 0`
+      padding: `${labelShape.attr("y") - (labelShape.attr("lineHeight") - labelShape.attr("fontSize")) / 2 - 1}px 1px`
     });
   }
 
@@ -255,12 +265,13 @@ export default class EditableLabel extends Base {
     modifyCSS(this.wrapperEl, {
       visibility: "visible"
     });
+    this.showEditor()
 
     this.item = item as INode;
 
     const model = item.getModel();
     const originalLabel = (this.originalLabel = getLabelByModel(model));
-    this.editor;this.editor.setText(originalLabel, "silent");
+    this.editor; this.editor.setText(originalLabel, "silent");
     setTimeout(() => this.editor.focus())
 
     this.adjustPosition = this.adjustPosition.bind(this);

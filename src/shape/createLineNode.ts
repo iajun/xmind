@@ -1,8 +1,9 @@
-import { IGroup, Item, ModelConfig, ShapeOptions, Util } from "@antv/g6";
+import { IGroup, Item, ShapeOptions, Util } from "@antv/g6";
 import _ from "lodash";
-import config, { NodeConfig, setGlobal } from "../config";
+import C from "../config";
 import { ItemState } from "../constants";
 import { TreeGraphData } from "../types";
+import { NodeConfig } from "./types";
 import {
   drawUnfoldButton,
   drawFoldButton,
@@ -13,16 +14,7 @@ import {
 const NODE_BOTTOM_LINE = "node-bottom-line";
 export const FOLD_BUTTON_GROUP = "node-fold-button";
 
-const createLineNode = (
-  name: string,
-  options: NodeConfig,
-  mapCfg?: (cfg) => ModelConfig
-): ShapeOptions => {
-  setGlobal({
-    registeredNodes: {
-      [name]: { options, mapCfg }
-    }
-  });
+const createLineNode = (options: NodeConfig): ShapeOptions => {
   return {
     options,
 
@@ -66,23 +58,19 @@ const createLineNode = (
         } else {
           keyShape.attr(this.options.wrapperStyle);
           path.attr({
-            stroke: config.global.stroke
+            stroke: C.edge.stroke
           });
         }
       }
     },
     draw(cfg, group) {
-      if (mapCfg) {
-        cfg = mapCfg(cfg);
-      }
-
       const [width, height] = this.getSize(cfg);
 
       group.addShape("path", {
         name: NODE_BOTTOM_LINE,
         attrs: {
-          stroke: config.global.stroke,
-          lineWidth: config.global.lineWidth,
+          stroke: C.edge.stroke,
+          lineWidth: C.edge.lineWidth,
           path: [
             ["M", 0, height],
             ["H", width]

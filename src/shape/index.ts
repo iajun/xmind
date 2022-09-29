@@ -2,12 +2,11 @@ import createRectNode from "./createRectNode";
 import createLineNode from "./createLineNode";
 import G6 from "@antv/g6";
 import config from "../config";
+import { each } from "lodash";
 
-G6.registerNode("xmindNode", createLineNode( "xmindNode",config.xmindNode));
-G6.registerNode("rootNode", createRectNode( "rootNode",config.rootNode));
-G6.registerNode(
-  "dragPlaceholderNode",
-  createRectNode("dragPlaceholderNode", config.placeholderNode)
-);
+each(config.node, (shapeConfig, id) => {
+  const { shapeType } = shapeConfig;
+  G6.registerNode(id, { line: createLineNode, rect: createRectNode }[shapeType](shapeConfig))
+})
 
 export { createRectNode, createLineNode };

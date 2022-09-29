@@ -1,25 +1,15 @@
-import { IGroup, Item, ModelConfig, ShapeOptions } from "@antv/g6";
+import { IGroup, Item, ShapeOptions } from "@antv/g6";
 import { drawNode, getSizeByConfig } from "./util";
 import _ from "lodash";
 import { ItemState } from "../constants";
-import { NodeConfig, setGlobal } from "../config";
+import { NodeConfig } from "./types";
 
 export const createRectNode = (
-  name: string,
   options: NodeConfig,
-  mapCfg?: (cfg) => ModelConfig
 ): ShapeOptions => {
-  setGlobal({
-    registeredNodes: {
-      [name]: { options, mapCfg },
-    },
-  });
   return {
     options,
     draw(cfg, group: IGroup) {
-      if (mapCfg) {
-        cfg = mapCfg(cfg);
-      }
       const keyshape = drawNode(group, cfg, options);
       return keyshape;
     },

@@ -5,8 +5,7 @@ import {
   TreeGraphData,
 } from "@antv/g6";
 import EditableLabel, { EditableLabelConfig } from "./plugin/editableLabel";
-import { Global } from "./types";
-import config, { setGlobal } from "./config";
+import C, { getNodeConfig } from "./config";
 import { createCommandManager, CommandOption, CommandManager } from "./command";
 import "./behavior";
 import "./shape";
@@ -14,6 +13,7 @@ import _ from "lodash";
 import Graph from "./graph";
 import { getSizeByConfig } from "./shape/util";
 import { onResize } from "./utils";
+import { ModelConfig } from "./types";
 
 type GraphOptions = Pick<
   IGraphOptions,
@@ -29,7 +29,6 @@ type GraphOptions = Pick<
   | "minZoom"
   | "plugins"
 > & {
-  global?: Partial<Global>;
   data?: TreeGraphData;
   commands?: CommandOption[];
   editorLabelOptions?: EditableLabelConfig;
@@ -48,24 +47,16 @@ function getDefaultOptions(): IGraphOptions {
       type: "mindmap",
       direction: "H",
       getHGap: () => 40,
-      getWidth: (node) => {
-        const nodeConfig = config.global.registeredNodes[node.type];
+      getWidth: (node: ModelConfig) => {
+        const nodeConfig = getNodeConfig(node.type)
         if (!nodeConfig) return 0;
-        const { mapCfg, options } = nodeConfig;
-        const size = getSizeByConfig(
-          options,
-          typeof mapCfg === "function" ? mapCfg(node) : node
-        );
+        const size = getSizeByConfig(nodeConfig, node);
         return size.width;
       },
-      getHeight: (node) => {
-        const nodeConfig = config.global.registeredNodes[node.type];
+      getHeight: (node: ModelConfig) => {
+        const nodeConfig = getNodeConfig(node.type)
         if (!nodeConfig) return 0;
-        const { mapCfg, options } = nodeConfig;
-        const size = getSizeByConfig(
-          options,
-          typeof mapCfg === "function" ? mapCfg(node) : node
-        );
+        const size = getSizeByConfig(nodeConfig, node);
         return size.height;
       },
       getSide: () => {
@@ -75,8 +66,8 @@ function getDefaultOptions(): IGraphOptions {
     defaultEdge: {
       type: "cubic-horizontal",
       style: {
-        lineWidth: config.global.lineWidth,
-        stroke: config.global.stroke,
+        lineWidth: C.edge.lineWidth,
+        stroke: C.edge.stroke,
       },
     },
     modes: {
@@ -126,14 +117,12 @@ function shouldBeginCollapseExpand(e: IG6GraphEvent) {
 
 export function createGraph(options: GraphOptions) {
   const {
-    global,
     data,
     commands,
     autoFit,
     editorLabelOptions = {},
     ...rest
   } = options;
-  if (global) setGlobal(global);
   const finalOptions = _.merge(
     {},
     userGlobalOptions,
