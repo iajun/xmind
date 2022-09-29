@@ -24,7 +24,7 @@ class TopicCommand extends BaseCommand {
       id: v4(),
       label: "",
       type: "xmindNode" as NodeType,
-      children: [],
+      children: []
     };
     this.transactions = [
       [
@@ -32,12 +32,17 @@ class TopicCommand extends BaseCommand {
           model,
           pointer: {
             parentId: getParentId(this.target),
-            prevId: this.target.getID(),
-          },
-        }),
+            prevId: this.target.getID()
+          }
+        })
       ],
-      [createTransaction(TransactionType.REMOVE, { model })],
+      [createTransaction(TransactionType.REMOVE, { model })]
     ];
+  }
+
+  undo() {
+    this.select();
+    return super.undo();
   }
 }
 

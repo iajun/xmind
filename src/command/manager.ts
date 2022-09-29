@@ -51,10 +51,10 @@ class CommandManager {
     const graph = this.graph;
 
     graph.executeBatch(() => {
-      transactions.forEach((transaction) => {
+      transactions.forEach(transaction => {
         const {
           command,
-          payload: { model, pointer },
+          payload: { model, pointer }
         } = transaction;
         switch (command) {
           case TransactionType.REMOVE:
@@ -82,7 +82,7 @@ class CommandManager {
     }
     const Ctor = Command.constructor;
 
-    const command = new (Ctor as any)(this.graph, this);
+    const command = new (Ctor as any)(this.graph, this.queue);
 
     if (!command.canExecute()) {
       return;
@@ -93,11 +93,7 @@ class CommandManager {
     }
     if (!command.shouldExecute()) return;
 
-    if (['undo', 'redo'].includes(name)) {
-      command.init(this.queue);
-    } else {
-      command.init(params);
-    }
+    command.init(params);
 
     this.graph.emit(EditorEvent.onBeforeExecuteCommand, command);
 
@@ -146,12 +142,12 @@ class CommandManager {
       );
     });
 
-    this.graph.on(GraphCommonEvent.onKeyDown, (e) => {
+    this.graph.on(GraphCommonEvent.onKeyDown, e => {
       if (!this.shouldTriggerShortcut()) return;
       // editing
       if (this.graph.findAllByState("node", ItemState.Editing).length) return;
 
-      Object.values(this.command).some((command) => {
+      Object.values(this.command).some(command => {
         const { name, shortcuts } = command;
 
         if (isFired(shortcuts, e)) {

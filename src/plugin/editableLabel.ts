@@ -196,16 +196,20 @@ export default class EditableLabel extends Base {
     const font = labelShape.attr("font");
 
     const matrix = graph.getGroup().getMatrix();
-    const containerPoint = Util.applyMatrix(item.getBBox(), matrix);
+    const itemBBox = item.getBBox();
     const labelBBox = labelShape.getBBox();
+    const containerPoint = Util.applyMatrix({
+      x: itemBBox.x + labelBBox.x,
+      y: itemBBox.y,
+    }, matrix);
 
     const matrixString = [
       matrix[0],
       matrix[1],
       matrix[3],
       matrix[4],
-      containerPoint.x + labelBBox.x,
-      containerPoint.y + 1
+      containerPoint.x, 
+      containerPoint.y + 2
     ].join();
 
     const lineHeight = labelShape.attr("lineHeight");

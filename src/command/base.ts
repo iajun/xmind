@@ -38,4 +38,10 @@ export default class BaseCommand implements ICommand {
   undo(): Transaction[] {
     return this.transactions[1];
   }
+
+  select(item: INode = this.target) {
+    setTimeout(() => {
+      this.graph.setSelectedItems([item]);
+    });
+  }
 }

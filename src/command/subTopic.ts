@@ -31,6 +31,11 @@ class SubTopicCommand extends BaseCommand {
       [createTransaction(TransactionType.REMOVE, { model })],
     ];
   }
+
+  undo() {
+    this.select();
+    return super.undo();
+  }
 }
 
 export default SubTopicCommand;
