@@ -4,6 +4,7 @@ export type TextRendererConfig = {
   fontSize: number;
   lineHeight: number;
   maxWidth: number;
+  minWidth: number;
 }
 
 export const fillText = (
@@ -11,9 +12,6 @@ export const fillText = (
   maxWidth: number,
   measureLetterWidth: (letter: string) => number
 ) => {
-  function trimText(text: string) {
-    return text.replace(/^(\n| )*/g, '').replace(/(\n| )*$/g, '')
-  }
 
   const breakLine = (text: string, maxWidth: number, measureLetterWidth: (letter: string) => number) => {
     let res = [];
@@ -46,7 +44,7 @@ export const fillText = (
     }
   }
 
-  return breakLine(trimText(text), maxWidth, measureLetterWidth);
+  return breakLine(text, maxWidth, measureLetterWidth);
 }
 
 export type TextRendererResult = {
@@ -82,7 +80,7 @@ class TextRenderer {
     return {
       text: resText,
       lines,
-      width: lines > 1 ? this.rendererConfig.maxWidth : this.measureLetter(resText),
+      width: Math.max(this.rendererConfig.minWidth, lines > 1 ? this.rendererConfig.maxWidth : this.measureLetter(resText)),
       height: this.rendererConfig.lineHeight * lines
     }
   }

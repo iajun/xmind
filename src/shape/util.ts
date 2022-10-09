@@ -53,6 +53,7 @@ const getIconWidth = (count: number) => {
 };
 
 export const getSizeByConfig = (config: NodeConfig, cfg: ModelConfig) => {
+  cfg = getRenderModel(cfg)
   const {
     labelStyle,
     padding,
@@ -70,7 +71,7 @@ export const getSizeByConfig = (config: NodeConfig, cfg: ModelConfig) => {
 
   const leftIconWidth = getIconWidth(cfg.leftIcons?.length || 0);
   const rightIconWidth = getIconWidth(cfg.rightIcons?.length || 0);
-  const textWidth = labelWidth;
+  const textWidth = Math.max(labelWidth, labelStyle.minWidth);
   const textHeight = labelHeight;
 
   const width =
@@ -94,11 +95,14 @@ export const getSizeByConfig = (config: NodeConfig, cfg: ModelConfig) => {
   };
 };
 
+export const getRenderModel = (cfg: ModelConfig) => C.node[cfg.type]?.render?.(cfg) || cfg;
+
 export const drawNode = (
   group: IGroup,
   cfg: ModelConfig,
   options: NodeConfig
 ) => {
+  cfg = getRenderModel(cfg);
   const { labelStyle, wrapperStyle, padding } = options;
   const { lineHeight, fontSize } = labelStyle;
   const formattedPadding = Util.formatPadding(padding);

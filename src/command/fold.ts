@@ -22,8 +22,8 @@ class FoldCommand extends BaseCommand {
     const nodeInfo = getNodeInfo(this.target);
     const { model } = nodeInfo;
     this.transactions = [
-      [createTransaction(TransactionType.UPDATE, {model: {...model, collapsed: true}})],
-      [createTransaction(TransactionType.UPDATE, {model: {...model, collapsed: false}})],
+      [createTransaction(TransactionType.UPDATE, { model: { ...model, collapsed: true } })],
+      [createTransaction(TransactionType.UPDATE, { model: { ...model, collapsed: false } })],
     ]
   }
 }

@@ -1,5 +1,5 @@
 import { IGroup, Item, ShapeOptions } from "@antv/g6";
-import { drawNode, getSizeByConfig } from "./util";
+import { drawNode, getRenderModel, getSizeByConfig } from "./util";
 import _ from "lodash";
 import { ItemState } from "../constants";
 import { NodeConfig } from "./types";
@@ -26,7 +26,7 @@ export const createRectNode = (
       }
     },
     getSize(cfg) {
-      const size = getSizeByConfig(options, cfg);
+      const size = getSizeByConfig(options, getRenderModel(cfg));
       return [size.width, size.height];
     },
     getAnchorPoints() {

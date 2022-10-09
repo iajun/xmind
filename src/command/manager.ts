@@ -2,7 +2,7 @@ import { ICommand, Transaction, TransactionType } from "./../types";
 import Graph from "../graph";
 import { EditorEvent, GraphCommonEvent, ItemState } from "../constants";
 import _ from "lodash";
-import { isFired } from "../utils";
+import { getParentId, getPrevId, isFired } from "../utils";
 import BaseCommand from "./base";
 import Queue from "./queue";
 import { CommandOption } from ".";
@@ -58,7 +58,10 @@ class CommandManager {
         } = transaction;
         switch (command) {
           case TransactionType.REMOVE:
+            const node = graph.findById(model.id);
+            const nextSelectedNode = getPrevId(node) || getParentId(node)
             graph.removeChild(model.id);
+            graph.selectNode(nextSelectedNode);
             break;
           case TransactionType.ADD:
             graph.placeNode(model, pointer);
@@ -72,35 +75,36 @@ class CommandManager {
     });
     graph.layout();
   }
-
-  /** 执行命令 */
-  execute(name: string, params?: object) {
+  canExecute(name: string): BaseCommand | false {
     const Command = this.command[name];
-
     if (!Command) {
-      return;
+      return false;
     }
     const Ctor = Command.constructor;
-
     const command = new (Ctor as any)(this.graph, this.queue);
-
     if (!command.canExecute()) {
-      return;
+      return false;
     }
-
     if (this.options[name] && this.options[name].shouldExecute) {
       command.shouldExecute = this.options[name].shouldExecute.bind(command);
     }
-    if (!command.shouldExecute()) return;
+    if (!command.shouldExecute()) return false;
+    return command;
+  }
+  /** 执行命令 */
+  execute(name: string, params?: object) {
+    const command = this.canExecute(name)
+    if (!command) return;
 
     command.init(params);
 
-    this.graph.emit(EditorEvent.onBeforeExecuteCommand, command);
 
     const transactions = command.execute();
-    this.handleTransactions(transactions);
 
-    this.graph.emit(EditorEvent.onAfterExecuteCommand, command);
+    this.graph.emit(EditorEvent.onBeforeExecuteCommand, command, transactions);
+    this.handleTransactions(transactions);
+    this.graph.emit(EditorEvent.onAfterExecuteCommand, command, transactions);
+
 
     this.enable();
 

@@ -8,7 +8,8 @@ import {
   drawUnfoldButton,
   drawFoldButton,
   getSizeByConfig,
-  drawNode
+  drawNode,
+  getRenderModel
 } from "./util";
 
 const NODE_BOTTOM_LINE = "node-bottom-line";
@@ -88,7 +89,7 @@ const createLineNode = (options: NodeConfig): ShapeOptions => {
       return keyShape;
     },
     getSize(cfg) {
-      const size = getSizeByConfig(options, cfg);
+      const size = getSizeByConfig(options, getRenderModel(cfg));
       return [size.width, size.height];
     },
     getAnchorPoints() {

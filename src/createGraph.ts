@@ -134,13 +134,17 @@ export function createGraph(options: GraphOptions) {
 
   const graph = new Graph(finalOptions);
   commandManager = createCommandManager(graph, commands);
-  graph.set("command", commandManager);
-
+  graph.set('command', commandManager)
+  graph.set('_config', C)
+  const resizeCallback = () => {
+    const el = graph.get("container");
+    graph.changeSize(el.clientWidth, el.clientHeight);
+  }
   if (autoFit) {
-    onResize(graph, () => {
-      const el = graph.get("container");
-      graph.changeSize(el.clientWidth, el.clientHeight);
-    });
+    onResize(graph, resizeCallback);
+  }
+  if (!options.width && !options.height) {
+    resizeCallback()
   }
 
   graph.changeData(data);

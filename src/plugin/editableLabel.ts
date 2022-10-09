@@ -18,7 +18,6 @@ import {
 import C from "../config";
 import { IG6GraphEvent, INode, Util } from "@antv/g6";
 import Graph from "../graph";
-import Quill from "./quill";
 import getTextRenderer from "../shape/text";
 
 export type EditableLabelConfig = {
@@ -35,7 +34,6 @@ export default class EditableLabel extends Base {
   private wrapperEl!: HTMLDivElement;
   private container!: HTMLDivElement;
   private event?: IG6GraphEvent;
-  private editor!: Quill;
   private graph!: Graph;
   private item?: INode | null;
   private originalLabel: string = "";
@@ -45,7 +43,8 @@ export default class EditableLabel extends Base {
       shortcuts: [" ", "Enter"],
       shouldBegin() {
         return true;
-      }
+      },
+
     } as EditableLabelConfig;
   }
 
@@ -103,32 +102,10 @@ export default class EditableLabel extends Base {
   private initRichTextEditor() {
     const className = this.get("className");
     this.editorEl = createDom(
-      `<div id="mindmap-quill" class=${className || "g6-editable-label"}></div>`
+      `<div contenteditable="plaintext-only" class=${className || "g6-editable-label"}></div>`
     );
     this.wrapperEl.appendChild(this.editorEl);
-    this.editor = new Quill(this.editorEl, {
-      modules: {
-        toolbar: [],
-        keyboard: {
-          bindings: {
-            handleEnter: {
-              key: "Enter",
-              handler: function() { }
-            },
-            handleLinebreak: {
-              key: "Enter",
-              shiftKey: true,
-              handler: range => {
-                this.editor.insertText(range.index, "\n", "api");
-              }
-            }
-          }
-        }
-      },
-      formats: [],
-      placeholder: "Compose an epic..."
-    });
-    this.editor.on("text-change", () => {
+    this.editorEl.addEventListener("input", () => {
       this.adjustGraphSize();
     });
   }
@@ -144,7 +121,7 @@ export default class EditableLabel extends Base {
     modifyCSS(this.wrapperEl, {
       background: keyShape.attr('fill')
     });
-    this.editor.root.style.cssText = `max-width: ${maxWidth}px; width: 100%; color: ${labelShape.attr('fill')};`;
+    this.editorEl.style.cssText = `max-width: ${maxWidth}px; width: 100%; color: ${labelShape.attr('fill')}; outline: none;`;
   }
 
   private unbindAllListeners() {
@@ -178,7 +155,7 @@ export default class EditableLabel extends Base {
   }
 
   private adjustGraphSize() {
-    const text = formatEditorText(this.editor.getText());
+    const text = formatEditorText(this.editorEl.innerHTML);
     const { item } = this;
     item.update({
       label: text
@@ -186,13 +163,9 @@ export default class EditableLabel extends Base {
     const model = item.getModel();
     const nodeLabelConfig = getNodeLabelStyle(model)
     if (!nodeLabelConfig) return;
-    const { width: placeholderWidth } = getTextRenderer(nodeLabelConfig).render(C.textPlaceholder?.(model) || '');
+    // const { width: placeholderWidth } = getTextRenderer(nodeLabelConfig).render(C.textPlaceholder?.(model) || '');
     const { width: textWidth } = getTextRenderer(nodeLabelConfig).render(text);
-    if (textWidth > placeholderWidth) {
-      this.editor.root.style.width = "auto";
-    } else {
-      this.editor.root.style.width = (textWidth || placeholderWidth) + "px";
-    }
+    this.editorEl.style.width = textWidth + "px";
     this.graph.layout();
     this.adjustPosition();
   }
@@ -236,7 +209,7 @@ export default class EditableLabel extends Base {
     if (!item) return;
 
     const command = this.graph.get("command");
-    const text = formatEditorText(this.editor.getText());
+    const text = formatEditorText(this.editorEl.innerHTML);
 
     if (isLabelEqual(text, this.originalLabel)) {
       return;
@@ -271,8 +244,8 @@ export default class EditableLabel extends Base {
 
     const model = item.getModel();
     const originalLabel = (this.originalLabel = getLabelByModel(model));
-    this.editor; this.editor.setText(originalLabel, "silent");
-    setTimeout(() => this.editor.focus())
+    this.editorEl.innerHTML = originalLabel;
+    setTimeout(() => this.editorEl.focus())
 
     this.adjustPosition = this.adjustPosition.bind(this);
 
@@ -314,8 +287,8 @@ export default class EditableLabel extends Base {
     if (Date.now() - lastShowTime < 500) return;
     this.unbindAllListeners();
 
-    this.item.setState(ItemState.Editing, false);
-    this.item.setState(ItemState.Selected, true);
+    this.graph.setItemState(this.item, ItemState.Editing, false);
+    this.graph.setItemState(this.item, ItemState.Selected, true);
     this.graph.off("wheel", this.adjustPosition);
     modifyCSS(this.wrapperEl, {
       visibility: "hidden"
@@ -326,6 +299,6 @@ export default class EditableLabel extends Base {
   public destroy() {
     this.unbindAllListeners();
     this.container.removeChild(this.wrapperEl);
-    this.editor = null;
+    this.editorEl = null;
   }
 }

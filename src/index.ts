@@ -1,5 +1,6 @@
 import { createGraph } from "./createGraph";
 import config from "./config";
+// import './demo'
 
 export { createGraph, setGlobalOptions } from "./createGraph";
 

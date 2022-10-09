@@ -36,6 +36,7 @@ const config: MindmapConfig = {
         fontSize: 16,
         fontFamily: "PingFang SC",
         maxWidth: 300,
+        minWidth: 50,
         lineHeight: 24,
         fill: "#fff",
       },
@@ -69,6 +70,7 @@ const config: MindmapConfig = {
       labelStyle: {
         fontSize: 14,
         fontFamily: "PingFang SC",
+        minWidth: 50,
         maxWidth: 500,
         lineHeight: 22,
         lineWidht: 100,
@@ -78,9 +80,10 @@ const config: MindmapConfig = {
     dragPlaceholderNode: {
       shapeType: 'rect',
       labelStyle: {
-        font: '14px "PingFang SC"',
-        maxWidth: 500,
         fontSize: 14,
+        fontFamily: "PingFang SC",
+        minWidth: 50,
+        maxWidth: 500,
         lineHeight: 20,
         fill: "#fff",
       },

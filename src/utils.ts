@@ -200,3 +200,8 @@ export function createClipboardItem(node: INode) {
 export function getNodeLabelStyle(model: ModelConfig): LabelStyle | undefined {
   return getNodeConfig(model.type?.toString() || '')?.labelStyle;
 }
+
+export function trimText(text: string) {
+  return text.replace(/^(\n| )*/g, '').replace(/(\n| )*$/g, '')
+}
+

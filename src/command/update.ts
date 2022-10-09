@@ -37,7 +37,7 @@ class UpdateCommand extends BaseCommand {
           model: {
             ...updateModel,
             ..._.pick(this.target.getModel() as TreeGraphData, Object.keys(updateModel))
-          } 
+          }
         })
       ]
     ];
